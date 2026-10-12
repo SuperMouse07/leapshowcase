@@ -1,0 +1,9 @@
+schema_version: 1
+module_path: frontend/production_frontend
+title: LeapShop 前台与隐藏管理后台（原生多页面前端）
+scope:
+    - frontend/
+source_files: []
+depends_on: []
+related_to:
+    - path: backend

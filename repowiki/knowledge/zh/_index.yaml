@@ -1,0 +1,53 @@
+# 知识卡导出索引文件
+schema_version: 1
+locale: zh-CN
+branch: main
+nodes_managed: true
+exported_at: "2026-08-16T05:23:10Z"
+modules:
+    "":
+        dir_name: LeapChess 单镜像全栈应用
+        title: LeapChess 单镜像全栈应用
+        scope:
+            - README.md
+            - .gitignore
+            - .dockerignore
+            - Dockerfile
+        source_files: []
+        children:
+            - backend
+            - frontend
+        depends_on: []
+        related_to: []
+    backend:
+        dir_name: LeapChess 后端 API 服务
+        title: LeapChess 后端 API 服务
+        scope:
+            - backend/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: frontend
+            - path: frontend/production_frontend
+    frontend:
+        dir_name: LeapShop 前端多页面站点
+        title: LeapShop 前端多页面站点
+        scope:
+            - frontend/
+        source_files: []
+        children:
+            - frontend/production_frontend
+        depends_on: []
+        related_to:
+            - path: backend
+    frontend/production_frontend:
+        dir_name: LeapShop 前台与隐藏管理后台（原生多页面前端）
+        title: LeapShop 前台与隐藏管理后台（原生多页面前端）
+        scope:
+            - frontend/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: backend

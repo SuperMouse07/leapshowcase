@@ -1,0 +1,11 @@
+schema_version: 1
+module_path: ""
+title: LeapChess 单镜像全栈应用
+scope:
+    - README.md
+    - .gitignore
+    - .dockerignore
+    - Dockerfile
+source_files: []
+depends_on: []
+related_to: []
