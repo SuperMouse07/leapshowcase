@@ -65,6 +65,10 @@
 | `settings` | key, value；含 site_title/logo_url/announcement/contact/hero_products |
 | `activity_logs` | id, user_id, action, detail, target_type, target_id, created_at |
 
+> **新站规划字段（尚未实现）**：`products` 拟新增 `tags`（字符串数组，默认 `[]`），承载可展示的商品标签，如“降价促销”“可支持定制”。标签在前台以徽标呈现、在后台按商品增删配置；可另在 `settings` 定义受控标签词表以统一文案与样式（可选，非首版必需）。该字段不在 `0476933` 基线中，属新增，需在契约冻结前通过版本化迁移引入，并同步写入正式 `openapi.yaml`。
+
+> **新站规划：权限与审计（尚未实现，见 ADR-0005 及其后续细化）**：`users` 拟扩展账号类型（主/子账号）、权限矩阵（如 `products:write`/`slides:write`/`settings:write`）与首登强制改密标记；`activity_logs` 拟扩展 `action` 取值以覆盖登录/退出/商品增改删，记录操作时间戳与操作人用户名（会话时长由登录+退出推导；来源 IP 首版可选），查看限主账号并支持按时间/用户筛选。后台入口移除隐藏手势、仅保留直接 URL `/admin.html`，子账号管理为新增能力。以上均须通过版本化迁移引入并写入正式 `openapi.yaml`。
+
 ## 5. 已知契约风险
 
 | 风险 | 优先级 | 处理 |
