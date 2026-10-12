@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LEAP · Admin Sign In</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♞</text></svg>" />
+  <link rel="stylesheet" href="css/theme.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/admin.css" />
+</head>
+<!-- 后台登录：仅用户名 + 密码（ADR-0005，不展示任何示例凭据）；
+     首登强制改密。视图由 login.js 渲染进 #authRoot。 -->
+<body class="auth-body">
+  <header class="nav">
+    <div class="nav-inner">
+      <a class="nav-logo" href="index.html" aria-label="LEAP Home">
+        <img src="assets/logo.svg" alt="LEAP LOGO" />
+      </a>
+      <nav class="nav-links" aria-label="Admin access">
+        <span class="admin-tag">Admin Access</span>
+      </nav>
+    </div>
+  </header>
+
+  <div class="auth-shell">
+    <div id="authRoot"></div>
+  </div>
+
+  <script type="module" src="js/pages/login.js"></script>
+</body>
+</html>

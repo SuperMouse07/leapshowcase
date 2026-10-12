@@ -1,0 +1,213 @@
+/* ============================================================
+   LEAP · Design Tokens & Base
+   ------------------------------------------------------------
+   Affordable Luxury 编辑画廊语言：白底(#FFFFFF) × 金(#D4AF37) × 黑(#12100E)
+   本文件只定义：设计令牌（CSS 变量）、重置、基础排版与通用工具类。
+   组件级样式见 components.css / storefront.css / admin.css。
+   ============================================================ */
+
+:root {
+  /* ---- 品牌色板 ---- */
+  --white: #ffffff;
+  --paper: #faf8f3;
+  --ink: #12100e;
+  --ink-2: #423d34;
+  --muted: #837b6d;
+  --gold: #d4af37;
+  --gold-deep: #a9822a;
+  --gold-soft: #f1d27e;
+
+  /* ---- 语义色 ---- */
+  --danger: #9a2b1e;
+  --danger-soft: #b3402e;
+  --success: #2e6b34;
+
+  /* ---- 描边/分割线 ---- */
+  --line: rgba(18, 16, 14, 0.14);
+  --line-soft: rgba(18, 16, 14, 0.07);
+  --line-gold: rgba(212, 175, 55, 0.5);
+
+  /* ---- 字体 ---- */
+  --serif: Georgia, "Times New Roman", "Noto Serif SC", "Songti SC", serif;
+  --sans: "Helvetica Neue", Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+  --mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
+
+  /* ---- 布局节奏 ---- */
+  --wrap: 1160px;
+  --sec: 100px;
+  --gutter: 28px;
+  --nav-h: 68px;
+
+  /* ---- 层级 ---- */
+  --z-nav: 40;
+  --z-overlay: 60;
+  --z-drawer: 70;
+  --z-lens: 90;
+  --z-lightbox: 200;
+  --z-toast: 300;
+
+  /* ---- 动效 ---- */
+  --ease: cubic-bezier(0.22, 0.61, 0.25, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --t-fast: 0.2s;
+  --t-mid: 0.35s;
+  --t-slow: 0.7s;
+}
+
+/* ---------- 重置 ---------- */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+html {
+  scroll-behavior: smooth;
+  /* clip 而非 hidden：吸收 full-bleed 100vw 横向溢出，又不破坏 sticky 导航 */
+  overflow-x: clip;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  background: var(--white);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.7;
+  overflow-x: clip;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+img {
+  display: block;
+  max-width: 100%;
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+button {
+  font-family: inherit;
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: inherit;
+}
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+table {
+  border-collapse: collapse;
+}
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* ---------- 布局工具 ---------- */
+.wrap {
+  max-width: var(--wrap);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+.hidden {
+  display: none !important;
+}
+.section {
+  padding: var(--sec) 0;
+}
+.section-alt {
+  background: var(--paper);
+  border-top: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+}
+.stack > * + * {
+  margin-top: 12px;
+}
+
+/* ---------- 排版元件 ---------- */
+.micro-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 12px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--gold-deep);
+}
+.micro-label::before,
+.micro-label::after {
+  content: "";
+  width: 36px;
+  height: 1px;
+  background: var(--line-gold);
+}
+.micro-label.left::after,
+.micro-label.solo::after {
+  display: none;
+}
+.micro-label.left::before {
+  display: none;
+}
+.sec-title {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: clamp(30px, 4vw, 44px);
+  line-height: 1.15;
+  letter-spacing: 0.02em;
+  margin: 14px 0 10px;
+}
+.sec-sub {
+  color: var(--muted);
+  max-width: 640px;
+}
+.sec-head {
+  text-align: center;
+  margin-bottom: 56px;
+}
+.sec-head .sec-sub {
+  margin: 0 auto;
+}
+.page-head {
+  text-align: center;
+  padding: 72px 0 54px;
+}
+
+/* 棋盘格装饰带（品牌纹样） */
+.checker-band {
+  height: 12px;
+  background: repeating-conic-gradient(var(--ink) 0 25%, var(--white) 0 50%);
+  background-size: 12px 12px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+/* ---------- 滚动显现（JS 仅加类，动画为 CSS） ---------- */
+.reveal {
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity var(--t-slow) ease, transform var(--t-slow) ease;
+}
+.reveal.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ---------- 降级：减少动效 ---------- */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}

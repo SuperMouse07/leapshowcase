@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LEAP · Product Overview — Full Catalog</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♞</text></svg>" />
+  <link rel="stylesheet" href="css/theme.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/storefront.css" />
+</head>
+<body data-page="products">
+  <main>
+    <header class="page-head">
+      <span class="micro-label">The Catalog</span>
+      <h1 class="sec-title">Product Overview</h1>
+      <p class="sec-sub" style="margin:0 auto;">Every series in one masonry flow — filter by series or tag, then click any piece for its detail.</p>
+    </header>
+    <div class="checker-band" aria-hidden="true"></div>
+    <section class="section">
+      <div class="wrap">
+        <div class="ov-head">
+          <h3>The Full Catalog</h3>
+          <span class="ov-count" id="ovCount"></span>
+        </div>
+        <!-- 分类 / 标签筛选条（由 products.js 构建；ADR-0004 标签前台可筛选） -->
+        <div class="filter-bar" id="filterBar"></div>
+        <div class="masonry" id="grid"></div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="js/pages/products.js"></script>
+</body>
+</html>
