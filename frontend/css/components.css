@@ -118,32 +118,44 @@
   text-transform: uppercase;
   line-height: 1.4;
   border: 1px solid var(--line-gold);
-  color: var(--gold-deep);
-  background: rgba(212, 175, 55, 0.08);
+  color: var(--ink);
+  background: var(--white);
   white-space: nowrap;
 }
 .badge::before {
   content: "";
   width: 5px;
   height: 5px;
-  background: currentColor;
+  background: var(--gold-deep);
   transform: rotate(45deg);
 }
 /* 语义变体：由 badges.js 依据关键词/受控词表赋予 data-tone */
 .badge[data-tone="sale"] {
-  border-color: var(--danger);
-  color: var(--white);
-  background: var(--danger);
+  border-color: var(--ink);
+  color: var(--gold-soft);
+  background: var(--ink);
+}
+.badge[data-tone="sale"]::before {
+  background: var(--gold);
 }
 .badge[data-tone="custom"] {
-  border-color: var(--ink);
+  border-color: var(--gold-deep);
   color: var(--ink);
   background: var(--gold-soft);
 }
 .badge[data-tone="new"] {
-  border-color: var(--success);
-  color: var(--success);
-  background: rgba(46, 107, 52, 0.08);
+  border-color: var(--ink);
+  color: var(--ink);
+  background: var(--white);
+}
+/* 双价（ADR-0006）：划线原价，较小且弱化，紧邻现价 */
+.price-was {
+  margin-left: 8px;
+  font-size: 0.72em;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: rgba(18, 16, 14, 0.45);
+  text-decoration: line-through;
 }
 /* 卡片图片左上角悬浮徽标组 */
 .media-badges {

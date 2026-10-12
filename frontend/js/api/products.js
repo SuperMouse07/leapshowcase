@@ -23,7 +23,12 @@ export function normalizeProduct(p) {
     variants: Array.isArray(p.variants) ? p.variants : [],
     // ADR-0004：tags 为新增契约字段，旧基线缺失时补默认空数组
     tags: Array.isArray(p.tags) ? p.tags.filter((t) => t != null && t !== '') : [],
-    price: Number(p.price) || 0,
+    // 双价契约（ADR-0006）：current_price 现价（兼容旧基线 price 别名），original_price 划线原价（可空）
+    current_price: Number(p.current_price ?? p.price) || 0,
+    original_price: Number(p.original_price) > 0 ? Number(p.original_price) : null,
+    // 起订量（ADR-0006）：缺省 1
+    moq: Number(p.moq) || 1,
+    price: Number(p.current_price ?? p.price) || 0,
     stock: Number(p.stock) || 0,
   };
 }

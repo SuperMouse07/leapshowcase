@@ -70,11 +70,19 @@ export default {
               <option value="__custom">Custom…</option>
             </select>
           </label>
-          <label class="field">Price ($)
+          <label class="field">Current Price ($)
             <input type="number" id="pPrice" min="0" step="0.01" placeholder="0.00">
           </label>
           <label class="field">Stock
             <input type="number" id="pStock" min="0" step="1" placeholder="0">
+          </label>
+        </div>
+        <div class="form-row">
+          <label class="field">Original Price ($) — shown struck-through
+            <input type="number" id="pOrigPrice" min="0" step="0.01" placeholder="empty = not discounted">
+          </label>
+          <label class="field">MOQ (Minimum Order Quantity)
+            <input type="number" id="pMoq" min="1" step="1" placeholder="1">
           </label>
         </div>
         <label class="field hidden" id="customCatRow">Custom Category Id
@@ -221,6 +229,9 @@ export default {
         name: $('#pName', host).value,
         category,
         price: $('#pPrice', host).value || 0,
+        current_price: $('#pPrice', host).value || 0,
+        original_price: $('#pOrigPrice', host).value ? Number($('#pOrigPrice', host).value) : null,
+        moq: Number($('#pMoq', host).value) || 1,
         stock: $('#pStock', host).value || 0,
         description: $('#pDesc', host).value,
         info: $('#pInfo', host).value.split('\n').map((s) => s.trim()).filter(Boolean),
@@ -236,12 +247,12 @@ export default {
         let savedId = editId;
         if (editId) {
           await updateProduct(editId, body);
-          reportActivity('product_update', `更新商品 #${editId} ${body.name}`, { target_type: 'product', target_id: editId });
+          reportActivity('product_update', `Updated product #${editId} ${body.name}`, { target_type: 'product', target_id: editId });
           this.setMsg(`Product #${editId} updated ✓`);
         } else {
           const { product } = await createProduct(body);
           savedId = String(product.id);
-          reportActivity('product_create', `新增商品 #${savedId} ${product.name}`, { target_type: 'product', target_id: savedId });
+          reportActivity('product_create', `Created product #${savedId} ${product.name}`, { target_type: 'product', target_id: savedId });
           this.setMsg(`Product "${product.name}" uploaded ✓`);
         }
         // 主推款联动
@@ -298,7 +309,9 @@ export default {
       $('#pCustomCat').value = p.category;
     }
     this.syncCustomCat();
-    $('#pPrice').value = p.price;
+    $('#pPrice').value = p.current_price ?? p.price;
+    $('#pOrigPrice').value = p.original_price ?? '';
+    $('#pMoq').value = p.moq ?? 1;
     $('#pStock').value = p.stock ?? '';
     $('#pHero').checked = heroIds.includes(String(p.id));
     $('#pDesc').value = p.description || '';
@@ -464,7 +477,7 @@ export default {
         if (!confirm(`Delete product "${product.name}"? This cannot be undone.`)) return;
         try {
           await deleteProduct(product.id);
-          reportActivity('product_delete', `删除商品 #${product.id} ${product.name}`, { target_type: 'product', target_id: product.id });
+          reportActivity('product_delete', `Deleted product #${product.id} ${product.name}`, { target_type: 'product', target_id: product.id });
           toastOk('Product deleted.');
           this.loadList();
         } catch (err) {
@@ -504,7 +517,7 @@ export default {
             <td>${escapeHtml(p.name)}</td>
             <td>${escapeHtml(catLabel(p.category))}</td>
             <td><span class="cell-tags">${badgesHtml(p.tags, { max: 3 }) || '<span class="gallery-hint">—</span>'}</span></td>
-            <td class="td-num">$ ${Number(p.price).toFixed(2)}</td>
+            <td class="td-num">$ ${Number(p.current_price ?? p.price).toFixed(2)}${p.original_price ? ` <s class="price-was">${Number(p.original_price).toFixed(2)}</s>` : ''}</td>
             <td class="td-num">${Number(p.stock) || 0}</td>
             <td class="td-num">${(p.images || []).length}</td>
             <td class="td-num">${(p.details || []).length}</td>

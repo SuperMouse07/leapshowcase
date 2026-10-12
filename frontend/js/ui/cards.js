@@ -34,7 +34,7 @@ export function featureCard(p, { hero = false } = {}) {
     <h3 class="p-name"><a href="${productHref(p.id)}">${escapeHtml(p.name)}</a></h3>
     <p class="p-desc">${escapeHtml(p.description || '')}</p>
     <div class="p-foot">
-      <span class="p-price"><small>USD</small>${money(p.price)}</span>
+      <span class="p-price"><small>USD</small>${money(p.current_price ?? p.price)}${p.original_price ? `<s class="price-was">${money(p.original_price)}</s>` : ''}</span>
       <button class="btn-add" type="button" data-add="${escapeHtml(p.id)}">Add to List</button>
     </div>
   </article>`;
@@ -55,7 +55,7 @@ export function masonryItem(p) {
     <span class="m-name">${escapeHtml(p.name)}</span>
     <span class="m-meta">
       <span>${escapeHtml(catLabel(p.category))}</span>
-      <span class="price">${money(p.price)}</span>
+      <span class="price">${money(p.current_price ?? p.price)}${p.original_price ? `<s class="price-was">${money(p.original_price)}</s>` : ''}</span>
     </span>
     ${p.tags && p.tags.length ? `<span class="m-tags">${badgesHtml(p.tags, { max: 3 })}</span>` : ''}
   </a>`;

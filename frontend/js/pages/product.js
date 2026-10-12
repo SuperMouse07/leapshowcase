@@ -83,7 +83,8 @@ async function init() {
           <span class="micro-label left solo">${escapeHtml(meta.kicker)}</span>
           <h1 class="pd-name">${escapeHtml(p.name)}</h1>
           ${p.tags?.length ? `<div class="pd-tags">${badgesHtml(p.tags)}</div>` : ''}
-          <p class="pd-price">${money(p.price)}</p>
+          <p class="pd-price">${money(p.current_price ?? p.price)}${p.original_price ? `<s class="price-was">${money(p.original_price)}</s>` : ''}</p>
+          ${p.moq > 1 ? `<p class="pd-moq">Minimum order: ${p.moq} units</p>` : ''}
           <p class="pd-desc">${escapeHtml(p.description || '')}</p>
           <div class="pd-buy">
             <span class="stepper">

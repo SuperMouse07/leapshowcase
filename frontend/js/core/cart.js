@@ -83,7 +83,7 @@ export function add(id, qty = 1) {
   items.set(key, next);
   commit();
   const p = getProduct(key);
-  reportActivity('add_to_cart', `${p?.name || '商品'} (id:${key}) x${qty}`, {
+  reportActivity('add_to_cart', `${p?.name || 'product'} (id:${key}) x${qty}`, {
     target_type: 'product',
     target_id: key,
   });

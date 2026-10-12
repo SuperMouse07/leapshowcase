@@ -611,6 +611,13 @@
   color: var(--gold-deep);
   margin: 10px 0 14px;
 }
+.pd-moq {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: -6px 0 14px;
+}
 .pd-desc {
   color: var(--muted);
   max-width: 52ch;

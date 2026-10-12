@@ -100,7 +100,7 @@ export default {
         if (!confirm(`Delete sub-account "${u.username}"?`)) return;
         try {
           await deleteUser(u.id);
-          reportActivity('account_delete', `删除子账号 ${u.username}`, { target_type: 'user', target_id: u.id });
+          reportActivity('account_delete', `Deleted sub-account ${u.username}`, { target_type: 'user', target_id: u.id });
           toastOk('Account deleted.');
           this.load();
         } catch (err) {
@@ -143,7 +143,7 @@ export default {
           // 向后兼容旧基线：有编辑权限 → tester，否则只读 demo
           role: permissions.length ? 'tester' : 'demo',
         });
-        reportActivity('account_create', `创建子账号 ${username}`, { target_type: 'user' });
+        reportActivity('account_create', `Created sub-account ${username}`, { target_type: 'user' });
         msg.textContent = `Sub-account "${username}" created.`;
         msg.className = 'form-msg ok';
         $('#acctAddForm', host).reset();
@@ -231,7 +231,7 @@ export default {
       }
       const u = users.find((x) => String(x.id) === String(editingId));
       if (u) u.permissions = finalPerms;
-      reportActivity('permission_change', `更新子账号 #${editingId} 权限：${finalPerms.join(', ')}`, { target_type: 'user', target_id: editingId });
+      reportActivity('permission_change', `Updated sub-account #${editingId} permissions: ${finalPerms.join(', ')}`, { target_type: 'user', target_id: editingId });
       toastOk('Permissions saved.');
       this.closePermEditor();
       this.load();
