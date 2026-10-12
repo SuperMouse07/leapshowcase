@@ -10,7 +10,7 @@ import { catMeta } from '../data/content.js';
 import { badgesHtml } from './badges.js';
 
 /** 商品详情链接 */
-export const productHref = (id) => `product.html?id=${encodeURIComponent(id)}`;
+export const productHref = (id) => `/product?id=${encodeURIComponent(id)}`;
 
 /** 分类展示名（未知分类回退原始值） */
 export function catLabel(catId) {

@@ -20,10 +20,10 @@ import { CATS, seriesHref, BRAND } from '../data/content.js';
 
 /* ---------- 导航项（LOGO 左 / 跳转中 / 购物车右，每页一致） ---------- */
 const NAV = [
-  { href: 'index.html', key: 'home', label: 'Home' },
-  { href: 'products.html', key: 'products', label: 'Product Overview' },
+  { href: '/', key: 'home', label: 'Home' },
+  { href: '/products', key: 'products', label: 'Product Overview' },
   ...CATS.map((c) => ({ href: seriesHref(c.id), key: c.id, label: c.label })),
-  { href: 'journey.html', key: 'journey', label: 'Our Journey' },
+  { href: '/journey', key: 'journey', label: 'Our Journey' },
 ];
 
 const CART_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" aria-hidden="true">
@@ -42,7 +42,7 @@ function injectNav() {
     'afterbegin',
     `<header class="nav" id="nav">
       <div class="nav-inner">
-        <a class="nav-logo" href="index.html" aria-label="${escapeHtml(BRAND.name)} Home">
+        <a class="nav-logo" href="/" aria-label="${escapeHtml(BRAND.name)} Home">
           <img src="${SITE.defaultLogo}" alt="${escapeHtml(BRAND.name)} LOGO" />
         </a>
         <nav class="nav-links" id="navLinks" aria-label="Main navigation">
@@ -77,9 +77,9 @@ function injectDrawerAndFooter() {
       <div class="wrap footer-inner">
         <img src="${SITE.defaultLogo}" alt="${escapeHtml(BRAND.name)} LOGO" />
         <nav class="footer-links" aria-label="Footer navigation">
-          <a href="index.html">Home</a>
-          <a href="products.html">Products</a>
-          <a href="journey.html">Journey</a>
+          <a href="/">Home</a>
+          <a href="/products">Products</a>
+          <a href="/journey">Journey</a>
         </nav>
         <div class="footer-copy">
           <span>© 2026 ${escapeHtml(BRAND.name)} · Affordable Luxury Editorial Gallery</span>

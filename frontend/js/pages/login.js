@@ -23,7 +23,7 @@ function readyForAdmin() {
 function safeNext() {
   if (next && next.startsWith('/') && !next.startsWith('//')) return next;
   if (next && !/^https?:/i.test(next) && !next.startsWith('//')) return next;
-  return 'admin.html';
+  return '/admin';
 }
 
 function goAdmin() {

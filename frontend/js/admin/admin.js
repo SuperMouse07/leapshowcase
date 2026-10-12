@@ -32,13 +32,13 @@ const root = $('#adminRoot');
 /* ---------- 访问守卫：返回可进入后台的用户，否则跳转登录并返回 null ---------- */
 function guard() {
   if (!hasSession()) {
-    location.replace('login.html?next=admin.html');
+    location.replace('/login?next=/admin');
     return null;
   }
   const user = getUser();
   // 首登强制改密：回到登录页完成改密流程（改密需当前密码，无法在后台内联处理）
   if (mustChangePassword(user)) {
-    location.replace('login.html?next=admin.html');
+    location.replace('/login?next=/admin');
     return null;
   }
   return user;
@@ -50,7 +50,7 @@ function renderNav(user) {
     'afterbegin',
     `<header class="nav" id="nav">
       <div class="nav-inner">
-        <a class="nav-logo" href="index.html" aria-label="${escapeHtml(BRAND.name)} Home">
+        <a class="nav-logo" href="/" aria-label="${escapeHtml(BRAND.name)} Home">
           <img src="${SITE.defaultLogo}" alt="${escapeHtml(BRAND.name)} LOGO" />
         </a>
         <nav class="nav-links" aria-label="Admin navigation">
@@ -58,13 +58,13 @@ function renderNav(user) {
         </nav>
         <span class="admin-user-slot">
           <span class="nav-user"><b>${escapeHtml(user.display_name || user.username)}</b><span class="acct-type">${escapeHtml(accountLabel(user))}</span></span>
-          <a class="btn btn-small btn-ghost" href="index.html"><span>View Site</span></a>
+          <a class="btn btn-small btn-ghost" href="/"><span>View Site</span></a>
           <button class="btn btn-small" id="signOutBtn" type="button"><span>Sign Out</span></button>
         </span>
       </div>
     </header>`
   );
-  $('#signOutBtn')?.addEventListener('click', () => signOut({ redirect: 'login.html' }));
+  $('#signOutBtn')?.addEventListener('click', () => signOut({ redirect: '/login' }));
 }
 
 /* ---------- 拒绝访问卡片（无后台权限的账号） ---------- */
@@ -77,7 +77,7 @@ function renderDenied() {
       <button class="btn" id="deniedSignOut" type="button"><span>Switch Account</span></button>
     </div>
   </div>`;
-  $('#deniedSignOut').addEventListener('click', () => signOut({ redirect: 'login.html' }));
+  $('#deniedSignOut').addEventListener('click', () => signOut({ redirect: '/login' }));
 }
 
 /* ---------- 工作区（侧栏锚点 + 能力门控面板堆叠） ---------- */

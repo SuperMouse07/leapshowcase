@@ -25,7 +25,7 @@ function notFound() {
   if (!root) return;
   root.innerHTML = `<div class="wrap pd-wrap">
       <p class="cart-empty">Product not found ♟<br>
-        <a class="link-more" href="products.html"><span>Back to Product Overview</span><span class="arr">→</span></a>
+        <a class="link-more" href="/products"><span>Back to Product Overview</span><span class="arr">→</span></a>
       </p>
     </div>`;
 }

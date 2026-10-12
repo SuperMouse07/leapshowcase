@@ -44,7 +44,7 @@ export const CAT_META = {
 };
 
 /** 系列页链接（统一参数化路由） */
-export const seriesHref = (catId) => `series.html?cat=${encodeURIComponent(catId)}`;
+export const seriesHref = (catId) => `/series?cat=${encodeURIComponent(catId)}`;
 
 /** 取系列元数据（未知分类回退） */
 export function catMeta(catId) {
