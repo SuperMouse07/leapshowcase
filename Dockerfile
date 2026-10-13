@@ -18,6 +18,10 @@ ENV NODE_ENV=production
 ENV PORT=8080
 EXPOSE 8080
 
+# 持久化存储默认值：Zeabur 挂载的 Volume 位于 /data，图片落盘 /data/uploads
+ENV DATA_DIR=/data
+ENV UPLOAD_DIR=/data/uploads
+
 # 健康检查（供 Zeabur/容器编排探测 /api/health）
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
   CMD wget -q --spider "http://127.0.0.1:${PORT:-8080}/api/health" || exit 1

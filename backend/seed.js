@@ -172,6 +172,23 @@ async function seed() {
     for (const [key, value] of defaults) await upsertSetting(key, value);
     console.log('[seed] 全站设置默认值已写入');
   }
+
+  // ── Unconditional asset sync: ensure seed images exist on disk ──
+  // Even when tables are already populated, the upload files may be missing
+  // (e.g., after container redeploy with ephemeral FS). Re-import is idempotent
+  // because importAsset checks existsSync before writing.
+  const ALL_SEED_FILES = [
+    'placeholder.svg',
+    'hero-board.png', 'hero-clock.png', 'hero-mug.png',
+    'timer-main-01.png', 'timer-main-02.png', 'timer-main-03.png',
+    'timer-main-04.png', 'timer-main-05.png',
+    'timer-detail-01.png', 'timer-detail-02.png', 'timer-detail-03.png'
+  ];
+  let synced = 0;
+  for (const f of ALL_SEED_FILES) {
+    if (importAsset(f)) synced++;
+  }
+  if (synced > 0) console.log(`[seed] 资产同步: ${synced}/${ALL_SEED_FILES.length} 文件已写入 UPLOAD_DIR`);
 }
 
 /** settings 表 upsert（双方言兼容：PG 不能用 db.run，其会自动追加 RETURNING id） */

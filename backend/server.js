@@ -22,6 +22,14 @@ const MAX_IMAGES = 10; // 每件商品（含变体图集）最多图片数
 // 图片文件目录：生产指向 Zeabur 挂载的 Volume（如 /data/uploads），本地回退 backend/data/uploads
 const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, 'data', 'uploads');
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+// Verify write access to UPLOAD_DIR
+try {
+  const testFile = path.join(UPLOAD_DIR, '.write-test-' + Date.now());
+  fs.writeFileSync(testFile, 'ok');
+  fs.unlinkSync(testFile);
+} catch (e) {
+  console.error(`[boot] WARNING: UPLOAD_DIR (${UPLOAD_DIR}) is not writable: ${e.message}`);
+}
 
 const app = express();
 app.use(cors());
@@ -789,6 +797,9 @@ app.get('/api/stats/storage', authRequired, adminOnly, async (req, res) => {
     overheadRatio: totalBytes > 0 ? Number(((overheadBytes / totalBytes) * 100).toFixed(1)) : 0,
     volumeTotalBytes: volume.totalBytes,
     volumeFreeBytes: volume.freeBytes,
+    volumeMountPoint: process.env.UPLOAD_DIR || path.join(__dirname, 'data', 'uploads'),
+    volumeUsedBytes: Math.max(0, (volume.totalBytes || 0) - (volume.freeBytes || 0)),
+    volumeUsedPercent: volume.totalBytes ? Math.round((1 - volume.freeBytes / volume.totalBytes) * 1000) / 10 : 0,
   });
 });
 
@@ -890,6 +901,12 @@ if (fs.existsSync(frontendDir)) {
       }
     } catch { /* 忽略检测异常，不影响启动 */ }
   }
+  console.log('[boot] Storage configuration:', JSON.stringify({
+    dataDir: process.env.DATA_DIR || path.join(__dirname, 'data'),
+    uploadDir: UPLOAD_DIR,
+    volumeDetected: Boolean(process.env.UPLOAD_DIR || process.env.DATA_DIR),
+    dbType: db.type
+  }));
   app.listen(PORT, () => {
     console.log(`[leapchess] API 已启动: http://localhost:${PORT} (数据库: ${usePg ? 'PostgreSQL' : 'SQLite'})`);
   });
