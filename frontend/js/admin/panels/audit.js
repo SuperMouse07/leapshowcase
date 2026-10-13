@@ -81,7 +81,7 @@ export default {
 
   async load() {
     const tbody = $('#auditRows');
-    tbody.innerHTML = '<tr><td colspan="5" class="loading">Loading…</td></tr>';
+    if (tbody) tbody.innerHTML = Array(8).fill('<tr><td colspan="5"><div class="skeleton-row"></div></td></tr>').join('');
     try {
       const logs = await fetchActivity({
         limit: Number($('#auditLimit').value),

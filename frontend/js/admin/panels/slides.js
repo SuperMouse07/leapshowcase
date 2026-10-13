@@ -7,6 +7,7 @@
 import { $, escapeHtml } from '../../core/dom.js';
 import { fetchSlides, createSlide, updateSlide, deleteSlide, swapSlides } from '../../api/slides.js';
 import { toastOk, toastErr } from '../../ui/toast.js';
+import { confirmDialog } from '../../ui/dialog.js';
 
 const MAX_IMAGE_SIZE = 8 * 1024 * 1024;
 let slides = [];
@@ -80,7 +81,8 @@ export default {
         else if (btn.dataset.act === 'down') await swapSlides(s, slides[idx + 1]);
         else if (btn.dataset.act === 'toggle') await updateSlide(s.id, { enabled: s.enabled ? 0 : 1 });
         else if (btn.dataset.act === 'del') {
-          if (!confirm('Delete this slide?')) return;
+          const ok = await confirmDialog({ title: 'Delete Slide', message: 'Remove this slide from the carousel?', confirmText: 'Delete', danger: true });
+          if (!ok) return;
           await deleteSlide(s.id);
           toastOk('Slide deleted.');
         }
@@ -109,6 +111,7 @@ export default {
 
   async load() {
     const box = $('#slideRows');
+    if (box) box.innerHTML = Array(3).fill('<div class="skeleton-row" style="height:64px"></div>').join('');
     try {
       slides = await fetchSlides({ all: true });
     } catch (err) {

@@ -174,6 +174,12 @@
   border-color: var(--line-soft);
   background: var(--white);
 }
+.admin-side a.is-active {
+  border-left: 3px solid var(--gold);
+  padding-left: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
 .admin-content {
   flex: 1;
   min-width: 0;
@@ -190,8 +196,8 @@
 }
 .panel h2 {
   font-family: var(--serif);
-  font-size: 20px;
-  font-weight: 500;
+  font-size: var(--fs-lg);
+  font-weight: 600;
   letter-spacing: 0.02em;
   margin-bottom: 20px;
 }
@@ -298,15 +304,20 @@
   vertical-align: middle;
 }
 .admin-table th {
-  font-size: 10px;
-  letter-spacing: 0.22em;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--gold-deep);
   font-weight: 600;
 }
+.admin-table td {
+  font-size: var(--fs-md);
+}
 .admin-table tr:hover td {
   background: rgba(212, 175, 55, 0.06);
 }
+.admin-table tbody tr:nth-child(even) { background: rgba(0, 0, 0, .015); }
+.admin-table tbody tr { transition: background var(--t-fast) var(--ease); }
 .admin-table .th-num,
 .admin-table .td-num {
   text-align: right;
@@ -479,23 +490,23 @@
   transition: background-color var(--t-mid) ease, border-color var(--t-mid) ease, color var(--t-mid) ease;
 }
 #productForm.is-editing {
-  background: #1b1712;
+  background: var(--surface-editing);
   border-color: var(--line-gold);
-  color: #f5f1e8;
+  color: var(--surface-editing-text);
 }
 #productForm.is-editing h2 {
   color: var(--gold);
 }
 #productForm.is-editing .field,
 #productForm.is-editing label {
-  color: #c9c2b2;
+  color: var(--surface-editing-muted);
 }
 #productForm.is-editing input,
 #productForm.is-editing select,
 #productForm.is-editing textarea {
-  background: #262019;
+  background: var(--surface-editing-border);
   border-color: rgba(255, 255, 255, 0.18);
-  color: #f5f1e8;
+  color: var(--surface-editing-text);
 }
 #productForm.is-editing input:focus,
 #productForm.is-editing select:focus,
@@ -508,7 +519,7 @@
   color: #b9b2a4;
 }
 #productForm.is-editing .gallery-item {
-  background: #262019;
+  background: var(--surface-editing-border);
   border-color: rgba(255, 255, 255, 0.18);
 }
 #productForm.is-editing .gallery-add {
@@ -524,7 +535,7 @@
   background: var(--gold);
 }
 #productForm.is-editing .btn:hover {
-  color: #1b1712;
+  color: var(--surface-editing);
 }
 #productForm.is-editing .btn-ghost {
   border-color: rgba(255, 255, 255, 0.35);
@@ -534,13 +545,13 @@
   background: #e8e2d4;
 }
 #productForm.is-editing .btn-ghost:hover {
-  color: #1b1712;
+  color: var(--surface-editing);
 }
 #productForm.is-editing .form-msg.ok {
-  color: #9fd8a6;
+  color: var(--surface-editing-success);
 }
 #productForm.is-editing .form-msg.err {
-  color: #ff9d8f;
+  color: var(--surface-editing-danger);
 }
 .form-row {
   display: grid;
@@ -903,6 +914,9 @@
   border-color: var(--danger);
   color: var(--danger);
 }
+.audit-action[data-kind="update"] { border-color: rgba(100, 140, 180, .4); color: #4a7a9b; }
+.audit-action[data-kind="view"]   { border-color: var(--line); color: var(--muted); }
+.audit-action[data-kind="other"]  { border-color: var(--line); color: var(--muted); }
 
 /* ---------- 主推款管理 ---------- */
 .hero-row {
@@ -920,6 +934,77 @@
 .td-hero {
   white-space: nowrap;
 }
+
+/* ── Skeleton loading ── */
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.skeleton-row {
+  height: 42px;
+  background: linear-gradient(90deg, var(--line-soft) 25%, rgba(18,16,14,.04) 50%, var(--line-soft) 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite linear;
+  border-radius: 4px;
+  margin-bottom: var(--space-sm);
+}
+.skeleton-stat {
+  height: 20px;
+  width: 60%;
+  background: linear-gradient(90deg, var(--line-soft) 25%, rgba(18,16,14,.04) 50%, var(--line-soft) 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite linear;
+  border-radius: 3px;
+}
+
+/* ── Modal dialog ── */
+.dialog-overlay {
+  position: fixed; inset: 0; z-index: var(--z-lightbox);
+  background: rgba(18, 16, 14, .55);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: opacity var(--t-fast) var(--ease);
+}
+.dialog-overlay.open { opacity: 1; pointer-events: auto; }
+.dialog-card {
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: var(--space-xl);
+  max-width: 400px; width: 90%;
+  box-shadow: 0 16px 48px rgba(0,0,0,.18);
+  transform: translateY(12px) scale(.97);
+  transition: transform var(--t-mid) var(--ease-spring);
+}
+.dialog-overlay.open .dialog-card { transform: translateY(0) scale(1); }
+.dialog-title {
+  font-family: var(--serif);
+  font-size: var(--fs-xl);
+  font-weight: 600;
+  margin-bottom: var(--space-md);
+  color: var(--ink);
+}
+.dialog-msg {
+  font-size: var(--fs-base);
+  color: var(--ink-2);
+  line-height: 1.6;
+  margin-bottom: var(--space-lg);
+}
+.dialog-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-size: var(--fs-base);
+  background: var(--surface-sunken);
+  margin-bottom: var(--space-lg);
+  transition: border-color var(--t-fast);
+}
+.dialog-input:focus { outline: none; border-color: var(--gold); }
+.dialog-actions {
+  display: flex; gap: var(--space-sm); justify-content: flex-end;
+}
+.dialog-actions .btn { min-width: 80px; }
 
 /* ---------- 后台响应式 ---------- */
 @media (max-width: 1080px) {

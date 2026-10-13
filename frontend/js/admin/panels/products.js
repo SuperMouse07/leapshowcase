@@ -23,6 +23,7 @@ import { reportActivity } from '../../api/activity.js';
 import { badgesHtml } from '../../ui/badges.js';
 import { toastOk, toastErr } from '../../ui/toast.js';
 import { catLabel } from '../../ui/cards.js';
+import { confirmDialog } from '../../ui/dialog.js';
 
 const KNOWN_CATS = CATS.map((c) => c.id);
 const MAX_IMAGES = 10;
@@ -474,7 +475,8 @@ export default {
       }
       if (act === 'edit' && product) return this.fillForm(product);
       if (act === 'del' && product) {
-        if (!confirm(`Delete product "${product.name}"? This cannot be undone.`)) return;
+        const ok = await confirmDialog({ title: 'Delete Product', message: `Delete "${product.name}"? This cannot be undone.`, confirmText: 'Delete', danger: true });
+        if (!ok) return;
         try {
           await deleteProduct(product.id);
           reportActivity('product_delete', `Deleted product #${product.id} ${product.name}`, { target_type: 'product', target_id: product.id });
@@ -489,6 +491,7 @@ export default {
 
   async loadList() {
     const tbody = $('#productRows');
+    if (tbody) tbody.innerHTML = Array(5).fill('<tr><td colspan="12"><div class="skeleton-row"></div></td></tr>').join('');
     const limit = $('#listLimit').value;
     const catFilter = $('#listCatFilter').value;
     try {

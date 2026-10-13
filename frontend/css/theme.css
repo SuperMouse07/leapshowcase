@@ -52,6 +52,32 @@
   --t-fast: 0.2s;
   --t-mid: 0.35s;
   --t-slow: 0.7s;
+
+  /* ── Spacing scale ── */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+
+  /* ── Type scale ── */
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs-md: 13px;
+  --fs-base: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 20px;
+
+  /* ── Admin surface tokens ── */
+  --surface-raised: #ffffff;
+  --surface-sunken: var(--paper);
+  --surface-editing: #1b1712;
+  --surface-editing-text: #f5f1e8;
+  --surface-editing-muted: #c9c2b2;
+  --surface-editing-border: #262019;
+  --surface-editing-success: #9fd8a6;
+  --surface-editing-danger: #ff9d8f;
 }
 
 /* ---------- 重置 ---------- */

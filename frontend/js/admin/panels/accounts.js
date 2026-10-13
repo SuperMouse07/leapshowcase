@@ -15,6 +15,7 @@ import { createAccount } from '../../api/session.js';
 import { reportActivity } from '../../api/activity.js';
 import { permMatrixHtml, readPermMatrix, permTagsHtml } from '../permissions.js';
 import { toastOk, toastErr } from '../../ui/toast.js';
+import { confirmDialog, promptDialog } from '../../ui/dialog.js';
 
 let users = [];
 let editingId = null;
@@ -85,9 +86,14 @@ export default {
       const act = btn.dataset.act;
       if (act === 'perms') return this.openPermEditor(u);
       if (act === 'reset') {
-        const pw = prompt(`New password for "${u.username}" (min 6):`);
+        const pw = await promptDialog({
+          title: 'Reset Password',
+          label: `Enter new password for ${u.username}:`,
+          placeholder: 'Min 6 characters',
+          confirmText: 'Reset',
+          validate: (v) => v.length < 6 ? 'Password must be at least 6 characters' : null
+        });
         if (!pw) return;
-        if (pw.length < 6) return toastErr('Password must be at least 6 characters.');
         try {
           await resetUserPassword(u.id, pw);
           toastOk('Password reset.');
@@ -97,7 +103,8 @@ export default {
         return;
       }
       if (act === 'del') {
-        if (!confirm(`Delete sub-account "${u.username}"?`)) return;
+        const ok = await confirmDialog({ title: 'Delete Sub-account', message: `Delete sub-account "${u.username}"? This cannot be undone.`, confirmText: 'Delete', danger: true });
+        if (!ok) return;
         try {
           await deleteUser(u.id);
           reportActivity('account_delete', `Deleted sub-account ${u.username}`, { target_type: 'user', target_id: u.id });
@@ -162,6 +169,7 @@ export default {
 
   async load() {
     const tbody = $('#userRows');
+    if (tbody) tbody.innerHTML = Array(3).fill('<tr><td colspan="7"><div class="skeleton-row"></div></td></tr>').join('');
     try {
       users = await fetchUsers();
     } catch (err) {

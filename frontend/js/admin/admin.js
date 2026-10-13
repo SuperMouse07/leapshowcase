@@ -104,6 +104,22 @@ function renderWorkspace(user) {
       host.innerHTML = `<p class="loading">Panel failed to load: ${escapeHtml(err.message)}</p>`;
     }
   });
+
+  // ── Scroll spy: highlight active panel in side nav ──
+  const sideLinks = document.querySelectorAll('.admin-side a[href^="#"]');
+  const panels = document.querySelectorAll('.admin-content .panel');
+  if (sideLinks.length && panels.length && 'IntersectionObserver' in window) {
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          sideLinks.forEach((a) => a.classList.remove('is-active'));
+          const active = document.querySelector(`.admin-side a[href="#${entry.target.id}"]`);
+          if (active) active.classList.add('is-active');
+        }
+      });
+    }, { rootMargin: '-96px 0px -60% 0px', threshold: 0.1 });
+    panels.forEach((p) => obs.observe(p));
+  }
 }
 
 /* ---------- 应用全站设置到后台导航（LOGO + 标题），失败静默 ---------- */
