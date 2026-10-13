@@ -15,38 +15,39 @@ let pickedLogoData = '';
 
 export default {
   id: 'settingsPanel',
-  nav: '♛ Site Settings',
+  nav: '♛ 全站设置',
   capability: 'settings:write',
   panelClass: 'admin-settings',
 
   mount(host) {
     host.innerHTML = `
       <div class="panel-head">
-        <h2>♛ Site Settings</h2>
-        <button class="btn btn-small btn-ghost" type="button" id="settingsRefreshBtn">Refresh ⟳</button>
+        <h2>♛ 全站设置</h2>
+        <button class="btn btn-small btn-ghost" type="button" id="settingsRefreshBtn">重新读取 ⟳</button>
       </div>
+      <p class="panel-hint">以下内容展示在访客可见的前台（英文站），建议使用英文填写；保存后已打开的前台页面会自动同步。</p>
       <form id="settingsForm">
-        <label class="field">Site Title
-          <input type="text" id="setSiteTitle" maxlength="120" placeholder="LEAP">
+        <label class="field">站点标题
+          <input type="text" id="setSiteTitle" maxlength="120" placeholder="例如：LEAP（显示在浏览器标签页）">
         </label>
-        <div class="field">LOGO — shown in the navbar &amp; footer
+        <div class="field">LOGO — 显示在导航栏与页脚（选择图片后需点击“上传并应用 LOGO”）
           <div class="logo-row">
-            <img id="setLogoPreview" src="${SITE.defaultLogo}" alt="Current LOGO">
+            <img id="setLogoPreview" src="${SITE.defaultLogo}" alt="当前 LOGO">
             <input type="file" id="setLogoFile" accept="image/*" hidden>
-            <button class="btn btn-small btn-ghost" type="button" id="setLogoPickBtn">Choose Image…</button>
-            <button class="btn btn-small" type="button" id="setLogoUploadBtn" disabled>Upload &amp; Apply</button>
+            <button class="btn btn-small btn-ghost" type="button" id="setLogoPickBtn">选择图片…</button>
+            <button class="btn btn-small" type="button" id="setLogoUploadBtn" disabled>上传并应用 LOGO</button>
           </div>
         </div>
-        <label class="field">Home Announcement — supports &lt;strong&gt; / &lt;em&gt; / &lt;br&gt;
-          <textarea id="setAnnouncement" rows="3" placeholder="Welcome to LEAP — new arrivals every month."></textarea>
+        <label class="field">首页公告 — 支持 &lt;strong&gt; / &lt;em&gt; / &lt;br&gt; 标签
+          <textarea id="setAnnouncement" rows="3" placeholder="例如：Welcome to LEAP — new arrivals every month."></textarea>
         </label>
-        <label class="field">Contact Email
-          <input type="email" id="setContactEmail" placeholder="hello@example.com">
+        <label class="field">联系邮箱
+          <input type="email" id="setContactEmail" placeholder="例如：hello@example.com">
         </label>
-        <label class="field">Contact / Social Links
-          <textarea id="setContactSocial" rows="2" placeholder="Instagram @leapchess · WeChat LEAP_Chess"></textarea>
+        <label class="field">联系方式 / 社交链接
+          <textarea id="setContactSocial" rows="2" placeholder="例如：Instagram @leapchess · WeChat LEAP_Chess"></textarea>
         </label>
-        <button class="btn" type="submit" id="settingsSaveBtn"><span>Save Settings</span></button>
+        <button class="btn" type="submit" id="settingsSaveBtn"><span>保存设置</span></button>
       </form>`;
 
     $('#settingsRefreshBtn', host).addEventListener('click', () => this.load());
@@ -55,7 +56,7 @@ export default {
       const f = e.target.files[0];
       e.target.value = '';
       if (!f) return;
-      if (f.size > MAX_IMAGE_SIZE) return toastErr('Image exceeds the 8MB limit.');
+      if (f.size > MAX_IMAGE_SIZE) return toastErr('图片超过 8MB 上限。');
       const rd = new FileReader();
       rd.onload = () => {
         pickedLogoData = String(rd.result || '');
@@ -72,10 +73,10 @@ export default {
         const { url } = await uploadLogo(pickedLogoData);
         pickedLogoData = '';
         $('#setLogoPreview', host).src = url;
-        toastOk('Logo uploaded — applied site-wide.');
+        toastOk('LOGO 已上传，全站生效。');
         broadcastSettings();
       } catch (err) {
-        toastErr(`Logo upload failed: ${err.message}`);
+        toastErr(`LOGO 上传失败：${err.message}`);
         btn.disabled = false;
       }
     });
@@ -92,10 +93,10 @@ export default {
       };
       try {
         await updateSettings(settings);
-        toastOk('Settings saved — live on the frontend.');
+        toastOk('设置已保存，前台已同步。');
         broadcastSettings();
       } catch (err) {
-        toastErr(err.message || 'Save failed');
+        toastErr(err.message || '保存失败');
       } finally {
         btn.disabled = false;
       }
@@ -115,7 +116,7 @@ export default {
       const navLogo = document.querySelector('.nav-logo img');
       if (navLogo) navLogo.src = s.logo_url || SITE.defaultLogo;
     } catch (err) {
-      toastErr(`Load settings failed: ${err.message}`);
+      toastErr(`读取设置失败：${err.message}`);
     }
   },
 };

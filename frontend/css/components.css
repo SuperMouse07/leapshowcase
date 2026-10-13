@@ -102,12 +102,7 @@
   transform: translateX(5px);
 }
 
-/* ---------- 商品标签徽标（ADR-0004：tags 数组前台呈现） ---------- */
-.badges {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
+/* ---------- 通用徽标（后台账号类型 / 权限展示） ---------- */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -129,45 +124,11 @@
   background: var(--gold-deep);
   transform: rotate(45deg);
 }
-/* 语义变体：由 badges.js 依据关键词/受控词表赋予 data-tone */
-.badge[data-tone="sale"] {
-  border-color: var(--ink);
-  color: var(--gold-soft);
-  background: var(--ink);
-}
-.badge[data-tone="sale"]::before {
-  background: var(--gold);
-}
+/* 强调变体：主账号 */
 .badge[data-tone="custom"] {
   border-color: var(--gold-deep);
   color: var(--ink);
   background: var(--gold-soft);
-}
-.badge[data-tone="new"] {
-  border-color: var(--ink);
-  color: var(--ink);
-  background: var(--white);
-}
-/* 双价（ADR-0006）：划线原价，较小且弱化，紧邻现价 */
-.price-was {
-  margin-left: 8px;
-  font-size: 0.72em;
-  font-weight: 400;
-  letter-spacing: 0.02em;
-  color: rgba(18, 16, 14, 0.45);
-  text-decoration: line-through;
-}
-/* 卡片图片左上角悬浮徽标组 */
-.media-badges {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-  pointer-events: none;
 }
 
 /* ---------- 导航（shell.js 注入，每页一致） ---------- */
@@ -436,9 +397,6 @@
   font-size: 15px;
   font-weight: 500;
   padding-right: 8px;
-}
-.ci-tags {
-  margin: 4px 0;
 }
 .ci-price {
   font-size: 12px;

@@ -47,7 +47,7 @@ function close() {
  * @param  title?: string, message: string, confirmText?: string, cancelText?: string, danger?: boolean  opts
  * @returns {Promise<boolean>}
  */
-export function confirmDialog({ title = 'Confirm', message, confirmText = 'Confirm', cancelText = 'Cancel', danger = false } = {}) {
+export function confirmDialog({ title = '确认', message, confirmText = '确认', cancelText = '取消', danger = false } = {}) {
   return new Promise((resolve) => {
     const el = ensureOverlay();
     const card = el.querySelector('.dialog-card');
@@ -73,7 +73,7 @@ export function confirmDialog({ title = 'Confirm', message, confirmText = 'Confi
  * @param  title?: string, label?: string, placeholder?: string, confirmText?: string, cancelText?: string, validate?: (v:string)=>string|null  opts
  * @returns {Promise<string|null>} null if cancelled
  */
-export function promptDialog({ title = 'Input', label = '', placeholder = '', confirmText = 'Submit', cancelText = 'Cancel', validate = null } = {}) {
+export function promptDialog({ title = '请输入', label = '', placeholder = '', confirmText = '提交', cancelText = '取消', validate = null } = {}) {
   return new Promise((resolve) => {
     const el = ensureOverlay();
     const card = el.querySelector('.dialog-card');

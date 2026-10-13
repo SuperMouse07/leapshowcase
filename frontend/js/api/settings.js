@@ -3,18 +3,14 @@
  * ------------------------------------------------------------
  * settings 表键值对：site_title / logo_url / announcement_html /
  * contact_email / contact_social / hero_products（主推款 ID 数组）。
- * 规划：product_tags（受控标签词表，ADR-0004 可选），旧基线缺失时补默认。
  */
 import { http } from '../core/http.js';
 
-/** 归一化设置对象：hero_products / product_tags 保证为数组 */
+/** 归一化设置对象：hero_products 保证为数组 */
 export function normalizeSettings(s = {}) {
   const hero = Array.isArray(s.hero_products)
     ? s.hero_products.map(String)
     : safeParseArray(s.hero_products);
-  const vocab = Array.isArray(s.product_tags)
-    ? s.product_tags
-    : safeParseArray(s.product_tags);
   return {
     ...s,
     site_title: s.site_title || '',
@@ -23,8 +19,6 @@ export function normalizeSettings(s = {}) {
     contact_email: s.contact_email || '',
     contact_social: s.contact_social || '',
     hero_products: hero,
-    // ADR-0004 可选受控词表；缺省时给出建议标签，供后台快速选用
-    product_tags: vocab.length ? vocab : ['降价促销', '可支持定制', '新品上市'],
   };
 }
 

@@ -50,16 +50,16 @@ function renderNav(user) {
     'afterbegin',
     `<header class="nav" id="nav">
       <div class="nav-inner">
-        <a class="nav-logo" href="/" aria-label="${escapeHtml(BRAND.name)} Home">
+        <a class="nav-logo" href="/" aria-label="${escapeHtml(BRAND.name)} 首页">
           <img src="${SITE.defaultLogo}" alt="${escapeHtml(BRAND.name)} LOGO" />
         </a>
-        <nav class="nav-links" aria-label="Admin navigation">
-          <span class="admin-tag">Admin Panel</span>
+        <nav class="nav-links" aria-label="后台导航">
+          <span class="admin-tag">后台管理</span>
         </nav>
         <span class="admin-user-slot">
           <span class="nav-user"><b>${escapeHtml(user.display_name || user.username)}</b><span class="acct-type">${escapeHtml(accountLabel(user))}</span></span>
-          <a class="btn btn-small btn-ghost" href="/"><span>View Site</span></a>
-          <button class="btn btn-small" id="signOutBtn" type="button"><span>Sign Out</span></button>
+          <a class="btn btn-small btn-ghost" href="/" target="_blank" rel="noopener" title="在新标签页打开前台网站"><span>查看前台</span></a>
+          <button class="btn btn-small" id="signOutBtn" type="button"><span>退出登录</span></button>
         </span>
       </div>
     </header>`
@@ -72,9 +72,9 @@ function renderDenied() {
   root.innerHTML = `<div class="auth-shell">
     <div class="denied-card">
       <div class="denied-icon">♚</div>
-      <h2>Access Denied</h2>
-      <p>This account has no backend management permission. Contact the main-account administrator to request editor access.</p>
-      <button class="btn" id="deniedSignOut" type="button"><span>Switch Account</span></button>
+      <h2>无访问权限</h2>
+      <p>该账号没有后台管理权限，请联系主账号管理员申请编辑权限。</p>
+      <button class="btn" id="deniedSignOut" type="button"><span>切换账号</span></button>
     </div>
   </div>`;
   $('#deniedSignOut').addEventListener('click', () => signOut({ redirect: '/login' }));
@@ -101,13 +101,14 @@ function renderWorkspace(user) {
     try {
       p.mount(host, { user });
     } catch (err) {
-      host.innerHTML = `<p class="loading">Panel failed to load: ${escapeHtml(err.message)}</p>`;
+      host.innerHTML = `<p class="loading">面板加载失败：${escapeHtml(err.message)}</p>`;
     }
   });
 
   // ── Scroll spy: highlight active panel in side nav ──
+  // 观察面板宿主 section 本身（商品面板 panelClass 为空，不带 .panel 类）
   const sideLinks = document.querySelectorAll('.admin-side a[href^="#"]');
-  const panels = document.querySelectorAll('.admin-content .panel');
+  const panels = document.querySelectorAll('.admin-content > section[id]');
   if (sideLinks.length && panels.length && 'IntersectionObserver' in window) {
     const obs = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
@@ -131,7 +132,7 @@ function applyAdminSettings() {
         img.src = logo || SITE.defaultLogo;
       });
       const title = String(s.site_title || '').trim();
-      if (title) document.title = `${title} · Admin`;
+      if (title) document.title = `${title} · 后台管理`;
     })
     .catch(() => {});
 }
@@ -145,5 +146,5 @@ if (user) {
 }
 
 window.addEventListener('unhandledrejection', (e) => {
-  if (e.reason) toastErr(e.reason.message || 'Unexpected error');
+  if (e.reason) toastErr(e.reason.message || '发生未知错误');
 });

@@ -2,7 +2,7 @@
  * api/endpoints.js · 接口契约映射
  * ------------------------------------------------------------
  * 单一事实源：集中声明前端依赖的所有后端端点，严格对齐
- * specs/contracts/README.md（旧生产基线 v0.2）与 ADR-0004/0005 规划字段。
+ * specs/contracts/README.md（旧生产基线 v0.2）与 ADR-0005 规划字段。
  *
  * `status` 标注契约成熟度，供联调与降级判断：
  *   - stable   ：旧生产基线已实现，可直接调用；
@@ -32,7 +32,7 @@ export const ENDPOINTS = {
   reportActivity: { method: 'POST', path: '/activity', status: 'stable' },
   listActivity: { method: 'GET', path: '/activity', status: 'stable' },
 
-  // ---- 商品（含 tags 标签数组，ADR-0004） ----
+  // ---- 商品 ----
   listProducts: { method: 'GET', path: '/products', status: 'stable' },
   getProduct: { method: 'GET', path: '/products/:id', status: 'stable' },
   productStorage: { method: 'GET', path: '/products/:id/storage', status: 'stable' },
@@ -47,7 +47,7 @@ export const ENDPOINTS = {
   updateSlide: { method: 'PUT', path: '/slides/:id', status: 'stable' },
   deleteSlide: { method: 'DELETE', path: '/slides/:id', status: 'stable' },
 
-  // ---- 全站设置（含 hero_products / 受控标签词表 product_tags） ----
+  // ---- 全站设置（含 hero_products 主推款） ----
   getSettings: { method: 'GET', path: '/settings', status: 'stable' },
   updateSetting: { method: 'PUT', path: '/settings', status: 'stable' },
   uploadLogo: { method: 'POST', path: '/settings/logo', status: 'stable' },

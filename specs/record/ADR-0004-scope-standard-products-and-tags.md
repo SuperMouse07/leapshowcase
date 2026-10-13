@@ -1,6 +1,6 @@
 # ADR-0004 · 业务范围收敛：标准产品为主，商品标签区分促销/定制
 
-- **状态**：已采纳（Accepted）
+- **状态**：部分被取代（决策 2/3 已由 [ADR-0008](./ADR-0008-remove-pricing-moq-tags-and-admin-zh.md) 撤销；决策 1/5/6 继续有效）
 - **日期**：2026-10-12
 - **相关文档**：[proposal.md](../proposal.md)、[design.md](../design.md)、[tasks.md](../tasks.md)、[contracts/README.md](../contracts/README.md)、[ADR-0001](./ADR-0001-spec-workflow-and-constraints.md)
 
@@ -24,3 +24,7 @@ ADR-0001 将新站定位为“B2B 定制礼品采购”，此后 proposal/design
 - ✅ 正面：定位与真实业务一致；用一套通用标签机制同时满足“促销”“定制”等多种展示需求，避免为每种属性加专用字段；复用已验证的标准产品目录，改动面小。
 - ⚠️ 代价：`tags` 是新增字段，需通过版本化迁移引入，并在契约冻结时写入 `openapi.yaml`；前台需新增徽标渲染、后台需新增标签编辑控件。
 - 关联：ADR-0001 中“B2B 定制礼品采购”的站点定位由本 ADR 取代；proposal Q3、tasks B3/E3、design D3 的验收方向随之调整。
+
+## 后续更正（2026-10-13）
+
+经核验，`tags` 仅在前端落地，后端从未持久化，后台录入的标签保存后即丢失。用户决定整体下线商品标签：`products.tags` 字段、后台标签编辑器、`settings.product_tags` 词表、前台徽标与标签筛选全部移除（见 [ADR-0008](./ADR-0008-remove-pricing-moq-tags-and-admin-zh.md)）。本 ADR 的“标准产品为主线”定位（决策 1）与“删除纯定制表述”（决策 5）继续有效；“可支持定制”“降价促销”等展示语义今后如需恢复，须另立 ADR 并同步实现后端持久化。

@@ -217,9 +217,6 @@
   color: var(--gold-deep);
   font-family: var(--serif);
 }
-.m-tags {
-  margin-top: 8px;
-}
 .ov-sec {
   margin-bottom: 88px;
 }
@@ -243,7 +240,7 @@
   letter-spacing: 0.18em;
   text-transform: uppercase;
 }
-/* 分类/标签筛选条 */
+/* 分类筛选条 */
 .filter-bar {
   display: flex;
   align-items: center;
@@ -269,11 +266,6 @@
   background: var(--ink);
   border-color: var(--ink);
   color: var(--gold-soft);
-}
-.filter-sep {
-  color: var(--line);
-  margin: 0 6px;
-  user-select: none;
 }
 
 /* ---------- 分类页 Hero ---------- */
@@ -602,21 +594,11 @@
   font-weight: 500;
   margin: 12px 0 6px;
 }
-.pd-tags {
-  margin: 6px 0 4px;
-}
 .pd-price {
   font-family: var(--serif);
   font-size: 26px;
   color: var(--gold-deep);
   margin: 10px 0 14px;
-}
-.pd-moq {
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin: -6px 0 14px;
 }
 .pd-desc {
   color: var(--muted);

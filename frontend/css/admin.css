@@ -3,13 +3,26 @@
    ------------------------------------------------------------
    后台仅通过直接 URL /admin.html 进入（ADR-0005，前台无入口）。
    包含：登录/拒绝卡片、工作区布局、面板、表格、商品表单与图集、
-   轮播、全站设置、子账号管理（权限矩阵）、操作审计、存储统计、
-   标签(tags)编辑器。依赖 theme.css + components.css。
+   轮播、全站设置、子账号管理（权限矩阵）、操作审计、存储统计。
+   依赖 theme.css + components.css。
    ============================================================ */
 
 .admin-body,
 .auth-body {
   background: var(--paper);
+}
+/* 后台为中文界面：收窄大写字距，避免中文标签被拉得过散 */
+.admin-body .field,
+.admin-body .check-label,
+.admin-body .list-toolbar label,
+.admin-body .admin-side a,
+.admin-body .admin-stats .stat span,
+.auth-body .auth-card label {
+  letter-spacing: 0.06em;
+}
+/* 后台工作区比前台更宽，顶部导航同步加宽以保持左右对齐 */
+.admin-body .nav-inner {
+  max-width: var(--admin-wrap);
 }
 .admin-tag {
   font-size: 12px;
@@ -47,11 +60,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
   min-height: calc(100vh - var(--nav-h));
+  min-height: calc(100dvh - var(--nav-h));
   padding: 40px 28px;
+}
+/* 渲染容器本身也需撑满并居中，卡片才能在视口内水平 / 垂直居中 */
+.auth-shell > #authRoot {
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
 .auth-card {
   width: min(440px, 100%);
+  margin: 0 auto;
   background: var(--white);
   border: 1px solid var(--line);
   border-top: 3px solid var(--gold);
@@ -117,6 +139,7 @@
 }
 .denied-card {
   width: min(480px, 100%);
+  margin: 0 auto;
   background: var(--white);
   border: 1px solid var(--line);
   border-top: 3px solid var(--danger);
@@ -142,8 +165,9 @@
 }
 
 /* ---------- 工作区布局 ---------- */
+/* 右侧内容区加宽：使用 --admin-wrap（宽于前台 --wrap），提升表格与表单可读性 */
 .admin-main {
-  max-width: var(--wrap);
+  max-width: var(--admin-wrap);
   margin: 0 auto;
   padding: 40px 28px 80px;
   display: flex;
@@ -217,6 +241,15 @@
   line-height: 1.65;
   color: var(--muted);
   margin-bottom: 16px;
+}
+.panel-subtitle {
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 24px 0 4px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line-soft);
 }
 .count {
   font-size: 13px;
@@ -346,16 +379,6 @@
   gap: 8px;
   white-space: nowrap;
   flex-wrap: wrap;
-}
-.cell-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  max-width: 200px;
-}
-.cell-tags .badge {
-  font-size: 9px;
-  padding: 2px 7px;
 }
 
 /* Tooltip（存储明细） */
@@ -487,7 +510,21 @@
   min-width: 0;
 }
 #productForm {
+  /* 表单永不触发横向滚动：自身与所有控件均可收缩至容器宽度 */
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
   transition: background-color var(--t-mid) ease, border-color var(--t-mid) ease, color var(--t-mid) ease;
+}
+#productForm input,
+#productForm select,
+#productForm textarea {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+#productForm textarea {
+  resize: vertical;
 }
 #productForm.is-editing {
   background: var(--surface-editing);
@@ -555,12 +592,16 @@
 }
 .form-row {
   display: grid;
-  grid-template-columns: 1.3fr 1fr 1fr;
+  /* minmax(0, …) 让各列可收缩到内容最小宽度以下，避免 select/长文本撑出横向滚动 */
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr);
   gap: 12px;
+}
+.form-row > * {
+  min-width: 0;
 }
 /* 单列操作行（如“主推款”勾选），占满整行避免留白 */
 .form-row-ops {
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
 }
 /* 商品面板宿主（自带 .admin-grid 双栏），锚点跳转需避开吸顶导航 */
 .admin-products-host {
@@ -585,64 +626,6 @@
   height: 16px;
   margin: 0;
   accent-color: var(--gold-deep);
-}
-
-/* ---------- 标签(tags)编辑器（ADR-0004） ---------- */
-.tag-editor {
-  margin-top: 6px;
-}
-.tag-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-.tag-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 8px 5px 12px;
-  border: 1px solid var(--line-gold);
-  background: rgba(212, 175, 55, 0.08);
-  font-size: 12px;
-  color: var(--ink-2);
-}
-.tag-pill button {
-  width: 18px;
-  height: 18px;
-  line-height: 1;
-  border: 1px solid var(--line);
-  background: var(--white);
-  color: var(--muted);
-  font-size: 12px;
-  transition: all 0.2s;
-}
-.tag-pill button:hover {
-  border-color: var(--danger);
-  color: var(--danger);
-}
-.tag-suggest {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 8px;
-}
-.tag-suggest button {
-  padding: 4px 10px;
-  border: 1px dashed var(--line-gold);
-  font-size: 11px;
-  color: var(--gold-deep);
-  transition: all 0.2s;
-}
-.tag-suggest button:hover {
-  background: rgba(212, 175, 55, 0.12);
-}
-.tag-add-row {
-  display: flex;
-  gap: 8px;
-}
-.tag-add-row input {
-  flex: 1;
 }
 
 /* ---------- 图集 ---------- */

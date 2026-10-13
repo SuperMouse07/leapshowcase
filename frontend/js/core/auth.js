@@ -15,12 +15,12 @@ import { emit, EVENTS } from './events.js';
 
 /* ---------- 能力清单（权限矩阵的能力项） ---------- */
 export const CAPABILITIES = {
-  'products:write': { label: 'Products', desc: 'Create / edit / delete products and tags' },
-  'slides:write': { label: 'Home Carousel', desc: 'Add, edit, remove and reorder home slides' },
-  'settings:write': { label: 'Site Settings', desc: 'Site title, logo, announcement, contacts, featured products' },
-  'accounts:manage': { label: 'Sub-accounts', desc: 'Create, authorize and delete sub-accounts (main only)' },
-  'audit:view': { label: 'Audit Log', desc: 'View all account activity and filter by time / user' },
-  'stats:view': { label: 'Server Monitor', desc: 'Database and image storage statistics' },
+  'products:write': { label: '商品管理', desc: '新建 / 编辑 / 删除商品' },
+  'slides:write': { label: '首页轮播', desc: '添加、编辑、删除与排序首页轮播图' },
+  'settings:write': { label: '全站设置', desc: '站点标题、LOGO、公告、联系方式、主推商品' },
+  'accounts:manage': { label: '子账号管理', desc: '创建、授权与删除子账号（仅主账号）' },
+  'audit:view': { label: '操作审计', desc: '查看全部账号操作记录并按时间 / 用户筛选' },
+  'stats:view': { label: '服务器监控', desc: '数据库与图片存储统计' },
 };
 
 /** 主账号拥有的全部能力 */
@@ -84,8 +84,8 @@ export function mustChangePassword(user = session.getUser()) {
 /** 角色/账号类型的展示标签 */
 export function accountLabel(user = session.getUser()) {
   if (!user) return '';
-  if (isMainAccount(user)) return 'Main Account';
-  return 'Sub-account';
+  if (isMainAccount(user)) return '主账号';
+  return '子账号';
 }
 
 /* ---------- 登录 / 登出编排 ---------- */
@@ -98,7 +98,7 @@ export async function signIn(username, password) {
   const { token, user } = await sessionApi.login(username, password);
   session.saveSession(token, user);
   emit(EVENTS.sessionChanged, { user });
-  reportActivity('login', `User ${user?.username || username} signed in`);
+  reportActivity('login', `用户 ${user?.username || username} 登录`);
   return user;
 }
 
@@ -108,7 +108,7 @@ export async function signIn(username, password) {
  */
 export async function signOut({ redirect = null } = {}) {
   const user = session.getUser();
-  reportActivity('logout', `User ${user?.username || ''} signed out`);
+  reportActivity('logout', `用户 ${user?.username || ''} 退出登录`);
   try {
     await sessionApi.logout();
   } catch {

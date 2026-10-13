@@ -34,6 +34,7 @@
 
   /* ---- 布局节奏 ---- */
   --wrap: 1160px;
+  --admin-wrap: 1440px;
   --sec: 100px;
   --gutter: 28px;
   --nav-h: 68px;

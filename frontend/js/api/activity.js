@@ -11,18 +11,18 @@ import { getToken } from '../core/session.js';
 
 /** 审计操作类型词表（对齐后端 action 取值；含新站扩展枚举） */
 export const AUDIT_ACTIONS = {
-  login: { label: 'Sign-in', kind: 'login' },
-  logout: { label: 'Sign-out', kind: 'logout' },
-  product_create: { label: 'Product created', kind: 'create' },
-  product_update: { label: 'Product updated', kind: 'update' },
-  product_delete: { label: 'Product deleted', kind: 'delete' },
-  slide_change: { label: 'Carousel changed', kind: 'update' },
-  settings_change: { label: 'Settings changed', kind: 'update' },
-  account_create: { label: 'Sub-account created', kind: 'create' },
-  account_delete: { label: 'Sub-account deleted', kind: 'delete' },
-  permission_change: { label: 'Permissions changed', kind: 'update' },
-  page_view: { label: 'Page view', kind: 'view' },
-  add_to_cart: { label: 'Added to list', kind: 'view' },
+  login: { label: '登录', kind: 'login' },
+  logout: { label: '退出登录', kind: 'logout' },
+  product_create: { label: '新建商品', kind: 'create' },
+  product_update: { label: '更新商品', kind: 'update' },
+  product_delete: { label: '删除商品', kind: 'delete' },
+  slide_change: { label: '轮播变更', kind: 'update' },
+  settings_change: { label: '设置变更', kind: 'update' },
+  account_create: { label: '新建子账号', kind: 'create' },
+  account_delete: { label: '删除子账号', kind: 'delete' },
+  permission_change: { label: '权限变更', kind: 'update' },
+  page_view: { label: '页面浏览', kind: 'view' },
+  add_to_cart: { label: '加入清单', kind: 'view' },
 };
 
 /** 取操作类型的展示元数据（未知类型回退为原始值） */

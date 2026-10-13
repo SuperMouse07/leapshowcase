@@ -38,19 +38,19 @@ if (readyForAdmin()) {
 function loginView() {
   root.innerHTML = `<div class="auth-card">
     <div class="auth-icon">♞</div>
-    <h1>Admin Sign In</h1>
-    <p class="auth-sub">Authorized accounts only · All actions are logged</p>
+    <h1>后台登录</h1>
+    <p class="auth-sub">仅限授权账号 · 所有操作均会被记录</p>
     <form id="loginForm" novalidate>
-      <label>Username
-        <input id="username" name="username" type="text" autocomplete="username" required>
+      <label>用户名
+        <input id="username" name="username" type="text" autocomplete="username" placeholder="请输入后台用户名" required>
       </label>
-      <label>Password
-        <input id="password" name="password" type="password" autocomplete="current-password" required>
+      <label>密码
+        <input id="password" name="password" type="password" autocomplete="current-password" placeholder="请输入密码" required>
       </label>
       <p class="form-msg" id="msg" role="status"></p>
-      <button class="btn" type="submit" id="submitBtn"><span>Sign In</span></button>
+      <button class="btn" type="submit" id="submitBtn"><span>登录后台</span></button>
     </form>
-    <p class="auth-note">Access is restricted to provisioned accounts. Contact the main-account administrator to request editor permission.</p>
+    <p class="auth-note">仅限已开通的账号访问。如需开通或调整编辑权限，请联系主账号管理员。</p>
   </div>`;
   $('#username').focus();
   $('#loginForm').addEventListener('submit', onLogin);
@@ -64,16 +64,16 @@ async function onLogin(e) {
   const password = $('#password').value;
   msg.className = 'form-msg';
   if (!username || !password) {
-    msg.textContent = 'Please enter both username and password.';
+    msg.textContent = '请输入用户名和密码。';
     msg.classList.add('err');
     return;
   }
   btn.disabled = true;
-  msg.textContent = 'Signing in…';
+  msg.textContent = '登录中…';
   try {
     const user = await signIn(username, password);
     if (!isEditor(user)) {
-      msg.textContent = 'This account has no backend access.';
+      msg.textContent = '该账号没有后台访问权限。';
       msg.classList.add('err');
       btn.disabled = false;
       return;
@@ -84,7 +84,7 @@ async function onLogin(e) {
       goAdmin();
     }
   } catch (err) {
-    msg.textContent = err?.message || 'Sign-in failed. Please try again.';
+    msg.textContent = err?.message || '登录失败，请重试。';
     msg.classList.add('err');
     btn.disabled = false;
   }
@@ -94,17 +94,17 @@ async function onLogin(e) {
 function changeView(currentPassword) {
   root.innerHTML = `<div class="auth-card">
     <div class="auth-icon">🔒</div>
-    <h2>Set a New Password</h2>
-    <p class="auth-sub">For security, please change the initial password before continuing.</p>
+    <h2>设置新密码</h2>
+    <p class="auth-sub">为保障账号安全，请先修改初始密码再进入后台。</p>
     <form id="pwForm" novalidate>
-      <label>New Password
-        <input id="np" type="password" autocomplete="new-password" minlength="6" required>
+      <label>新密码
+        <input id="np" type="password" autocomplete="new-password" minlength="6" placeholder="至少 6 位字符" required>
       </label>
-      <label>Confirm New Password
-        <input id="np2" type="password" autocomplete="new-password" minlength="6" required>
+      <label>确认新密码
+        <input id="np2" type="password" autocomplete="new-password" minlength="6" placeholder="请再次输入新密码" required>
       </label>
       <p class="form-msg" id="msg" role="status"></p>
-      <button class="btn" type="submit" id="submitBtn"><span>Update &amp; Continue</span></button>
+      <button class="btn" type="submit" id="submitBtn"><span>更新密码并进入后台</span></button>
     </form>
   </div>`;
   $('#np').focus();
@@ -116,20 +116,20 @@ function changeView(currentPassword) {
     const np2 = $('#np2').value;
     msg.className = 'form-msg';
     if (np.length < 6) {
-      msg.textContent = 'Password must be at least 6 characters.';
+      msg.textContent = '密码至少需要 6 位。';
       return msg.classList.add('err');
     }
     if (np !== np2) {
-      msg.textContent = 'The two passwords do not match.';
+      msg.textContent = '两次输入的密码不一致。';
       return msg.classList.add('err');
     }
     btn.disabled = true;
-    msg.textContent = 'Updating…';
+    msg.textContent = '更新中…';
     try {
       await changePassword(currentPassword, np);
       goAdmin();
     } catch (err) {
-      msg.textContent = err?.message || 'Failed to update password.';
+      msg.textContent = err?.message || '密码更新失败，请重试。';
       msg.classList.add('err');
       btn.disabled = false;
     }
@@ -140,5 +140,5 @@ if (root && !readyForAdmin()) {
   loginView();
 }
 window.addEventListener('unhandledrejection', (e) => {
-  if (e.reason) toastErr(e.reason.message || 'Unexpected error');
+  if (e.reason) toastErr(e.reason.message || '发生未知错误');
 });

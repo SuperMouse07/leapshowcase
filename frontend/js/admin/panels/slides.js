@@ -15,23 +15,24 @@ let pendingDataUrl = '';
 
 export default {
   id: 'slidesPanel',
-  nav: '♞ Home Carousel',
+  nav: '♞ 首页轮播',
   capability: 'slides:write',
   panelClass: 'admin-slides',
 
   mount(host) {
     host.innerHTML = `
       <div class="panel-head">
-        <h2>♞ Home Carousel</h2>
-        <button class="btn btn-small btn-ghost" type="button" id="slidesRefreshBtn">Refresh ⟳</button>
+        <h2>♞ 首页轮播</h2>
+        <button class="btn btn-small btn-ghost" type="button" id="slidesRefreshBtn">刷新列表 ⟳</button>
       </div>
-      <div class="slide-rows" id="slideRows"><p class="loading">Loading…</p></div>
+      <p class="panel-hint">按列表顺序在首页轮播展示；停用的图片保留但不在前台显示。修改图片说明后点击输入框外即自动保存。</p>
+      <div class="slide-rows" id="slideRows"><p class="loading">加载中…</p></div>
       <form class="slide-add" id="slideAddForm">
         <input type="file" id="slideFile" accept="image/*" hidden>
-        <button class="btn btn-small btn-ghost" type="button" id="slidePickBtn">Choose Image…</button>
-        <img class="slide-preview hidden" id="slidePreview" alt="Slide preview">
-        <input type="text" id="slideAlt" placeholder="Alt text (optional)">
-        <button class="btn btn-small" type="submit" id="slideAddBtn" disabled>Add Slide</button>
+        <button class="btn btn-small btn-ghost" type="button" id="slidePickBtn">选择图片…</button>
+        <img class="slide-preview hidden" id="slidePreview" alt="轮播图预览">
+        <input type="text" id="slideAlt" placeholder="图片说明（alt，选填，用于无障碍与 SEO）">
+        <button class="btn btn-small" type="submit" id="slideAddBtn" disabled>添加轮播图</button>
       </form>`;
 
     $('#slidesRefreshBtn', host).addEventListener('click', () => this.load());
@@ -40,7 +41,7 @@ export default {
       const file = e.target.files && e.target.files[0];
       e.target.value = '';
       if (!file) return;
-      if (file.size > MAX_IMAGE_SIZE) return toastErr(`"${file.name}" is too large (max 8MB).`);
+      if (file.size > MAX_IMAGE_SIZE) return toastErr(`「${file.name}」超过 8MB 上限。`);
       const reader = new FileReader();
       reader.onload = () => {
         pendingDataUrl = reader.result;
@@ -61,10 +62,10 @@ export default {
         pendingDataUrl = '';
         $('#slideAlt', host).value = '';
         $('#slidePreview', host).classList.add('hidden');
-        toastOk('Slide added.');
+        toastOk('轮播图已添加。');
         await this.load();
       } catch (err) {
-        toastErr(`Add slide failed: ${err.message}`);
+        toastErr(`添加失败：${err.message}`);
         btn.disabled = false;
       }
     });
@@ -81,14 +82,14 @@ export default {
         else if (btn.dataset.act === 'down') await swapSlides(s, slides[idx + 1]);
         else if (btn.dataset.act === 'toggle') await updateSlide(s.id, { enabled: s.enabled ? 0 : 1 });
         else if (btn.dataset.act === 'del') {
-          const ok = await confirmDialog({ title: 'Delete Slide', message: 'Remove this slide from the carousel?', confirmText: 'Delete', danger: true });
+          const ok = await confirmDialog({ title: '删除轮播图', message: '确定从首页轮播中移除这张图片吗？此操作不可撤销。', confirmText: '确认删除', danger: true });
           if (!ok) return;
           await deleteSlide(s.id);
-          toastOk('Slide deleted.');
+          toastOk('轮播图已删除。');
         }
         await this.load();
       } catch (err) {
-        toastErr(`Slide update failed: ${err.message}`);
+        toastErr(`轮播更新失败：${err.message}`);
       }
     });
 
@@ -101,8 +102,9 @@ export default {
       try {
         await updateSlide(s.id, { alt: e.target.value });
         s.alt = e.target.value;
+        toastOk('图片说明已保存。');
       } catch (err) {
-        toastErr(`Slide update failed: ${err.message}`);
+        toastErr(`轮播更新失败：${err.message}`);
       }
     });
 
@@ -115,24 +117,24 @@ export default {
     try {
       slides = await fetchSlides({ all: true });
     } catch (err) {
-      box.innerHTML = `<p class="loading">Failed to load: ${escapeHtml(err.message)}</p>`;
+      box.innerHTML = `<p class="loading">加载失败：${escapeHtml(err.message)}</p>`;
       return;
     }
     if (!slides.length) {
-      box.innerHTML = '<p class="loading">No slides yet — add the first hero image below.</p>';
+      box.innerHTML = '<p class="loading">暂无轮播图——请在下方添加第一张首页大图。</p>';
       return;
     }
     box.innerHTML = slides
       .map(
         (s, i) => `<div class="slide-row ${s.enabled ? '' : 'disabled'}" data-id="${escapeHtml(s.id)}">
           <img class="slide-thumb" src="${escapeHtml(s.image)}" alt="">
-          <input type="text" class="slide-alt" value="${escapeHtml(s.alt || '')}" placeholder="Alt text…">
-          <span class="slide-idx">#${i + 1}</span>
+          <input type="text" class="slide-alt" value="${escapeHtml(s.alt || '')}" placeholder="图片说明…（失焦自动保存）">
+          <span class="slide-idx">#${i + 1}${s.enabled ? '' : ' · 已停用'}</span>
           <div class="slide-ops">
-            <button type="button" data-act="up" title="Move up" ${i === 0 ? 'disabled' : ''}>↑</button>
-            <button type="button" data-act="down" title="Move down" ${i === slides.length - 1 ? 'disabled' : ''}>↓</button>
-            <button type="button" data-act="toggle">${s.enabled ? 'Disable' : 'Enable'}</button>
-            <button type="button" data-act="del" class="danger">Delete</button>
+            <button type="button" data-act="up" title="上移" aria-label="上移" ${i === 0 ? 'disabled' : ''}>↑</button>
+            <button type="button" data-act="down" title="下移" aria-label="下移" ${i === slides.length - 1 ? 'disabled' : ''}>↓</button>
+            <button type="button" data-act="toggle">${s.enabled ? '停用' : '启用'}</button>
+            <button type="button" data-act="del" class="danger">删除</button>
           </div>
         </div>`
       )

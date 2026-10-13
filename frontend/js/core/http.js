@@ -6,7 +6,7 @@
  *   2. 自动注入 `Authorization: Bearer <token>` 鉴权头（可显式关闭）；
  *   3. 统一错误处理：非 2xx 抛出 ApiError（含 status / 后端 error 文案）；
  *   4. 401 自动广播会话失效事件，由页面决定跳转；
- *   5. 契约兼容：后端尚未实现的接口（tags / 子账号 / logout 等）
+ *   5. 契约兼容：后端尚未实现的接口（子账号 / logout 等）
  *      统一走此处，调用方按 `notImplemented` 标记优雅降级（见 api/ 层）。
  */
 import { discoverApiBase, getApiBase } from './config.js';
@@ -23,6 +23,44 @@ export class ApiError extends Error {
     /** 404/501：后端尚未实现该契约端点，调用方可据此静默降级 */
     this.notImplemented = notImplemented;
   }
+}
+
+/**
+ * 后台中文化（ADR-0008）：后端 error 文案保持英文契约不变，
+ * 仅在 lang="zh-*" 页面（admin.html / login.html）展示时映射为中文；前台保持英文。
+ */
+const ERROR_ZH = {
+  'Action is required': '缺少操作类型',
+  'Cannot delete admin accounts': '不能删除主账号',
+  'Editor access required (admin or tester)': '需要编辑权限',
+  'Invalid image data': '图片数据无效',
+  'Invalid username or password': '用户名或密码错误',
+  'New password must be at least 4 characters': '新密码至少需要 4 位',
+  'Not signed in': '尚未登录，请先登录',
+  'Old and new password are required': '请填写原密码和新密码',
+  'Old password is incorrect': '原密码不正确',
+  'Password must be at least 4 characters': '密码至少需要 4 位',
+  'Please enter username and password': '请输入用户名和密码',
+  'Please upload at least 1 main image': '请至少上传 1 张主图',
+  'Product name is required': '请填写商品名称',
+  'Product not found': '商品不存在或已被删除',
+  'Session expired, please sign in again': '登录已过期，请重新登录',
+  'settings object is empty': '没有需要保存的设置',
+  'Slide image is required': '请先选择轮播图片',
+  'Slide not found': '轮播图不存在或已被删除',
+  'Super admin access required': '仅主账号可执行此操作',
+  'Unsupported or invalid image data': '图片格式不支持或数据无效',
+  'User not found': '用户不存在',
+  'Username already exists': '用户名已存在',
+  'Username and password are required': '请填写用户名和密码',
+};
+const isZhPage = () => /^zh/i.test(document.documentElement.lang || '');
+function localize(message, status) {
+  if (!isZhPage()) return message;
+  if (ERROR_ZH[message]) return ERROR_ZH[message];
+  if (status === 0) return '网络不可达，请检查网络或稍后重试';
+  if (message === `Request failed (${status})`) return `请求失败（${status}）`;
+  return message;
 }
 
 /**
@@ -65,13 +103,13 @@ export async function request(path, opts = {}) {
   try {
     res = await fetch(url, { method, headers: finalHeaders, body: payload, signal });
   } catch (networkErr) {
-    throw new ApiError('Network unreachable', { status: 0, data: null });
+    throw new ApiError(localize('Network unreachable', 0), { status: 0, data: null });
   }
 
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
-    const message = data?.error || `Request failed (${res.status})`;
+    const message = localize(data?.error || `Request failed (${res.status})`, res.status);
     if (res.status === 401) emit(EVENTS.sessionExpired, { path });
     const notImplemented = res.status === 404 || res.status === 501;
     throw new ApiError(message, { status: res.status, data, notImplemented });

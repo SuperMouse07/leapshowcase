@@ -60,14 +60,12 @@
 | 表 | 关键字段 |
 |---|---|
 | `users` | id, username, password_hash, role(admin/tester/demo), display_name, created_at |
-| `products` | id, sku, name, category, price（`current_price` 旧基线别名）, current_price, original_price（可空，划线原价）, moq（起订量，默认 1）, description, image, images, variants, details, info, stock, sort_weight, created_at, updated_at |
+| `products` | id, sku, name, category, price, description, image, images, variants, details, info, stock, sort_weight, created_at, updated_at |
 | `slides` | id, image, alt, sort, enabled, created_at |
 | `settings` | key, value；含 site_title/logo_url/announcement/contact/hero_products |
 | `activity_logs` | id, user_id, action, detail, target_type, target_id, created_at |
 
-> **新站规划字段（尚未实现）**：`products` 拟新增 `tags`（字符串数组，默认 `[]`），承载可展示的商品标签，如“降价促销”“可支持定制”。标签在前台以徽标呈现、在后台按商品增删配置；可另在 `settings` 定义受控标签词表以统一文案与样式（可选，非首版必需）。该字段不在 `0476933` 基线中，属新增，需在契约冻结前通过版本化迁移引入，并同步写入正式 `openapi.yaml`。
-
-> **新站规划字段（ADR-0006，后端尚未实现）**：`products` 拟新增 `original_price`（可空数值；前台以较小划线字呈现于现价旁）与 `moq`（正整数起订量，默认 1；详情页展示 “Minimum order: N units”）。`current_price` 为现价规范名，`price` 保留为旧基线别名，客户端提交任一字段后端均应归一为 `current_price`。前端 `api/products.js` 的 `normalizeProduct` 已按此归一并对缺失字段兜底（`original_price` 缺省 `null`、`moq` 缺省 1）。二者须通过版本化迁移引入并写入正式 `openapi.yaml`。
+> **已移除的规划字段（ADR-0008）**：此前规划的 `products.tags`（商品标签数组）、`settings.product_tags`（受控标签词表）、`products.original_price`（划线原价）、`products.current_price`（现价别名）与 `products.moq`（起订量）均已取消，后端从未持久化，前端亦已删除相关输入、归一与展示逻辑。商品价格仅使用单一 `price` 字段；`POST/PUT /products` 不接受上述字段（即使提交也会被忽略），正式 `openapi.yaml` 冻结时不得包含它们。
 
 > **新站规划：权限与审计（尚未实现，见 ADR-0005 及其后续细化）**：`users` 拟扩展账号类型（主/子账号）、权限矩阵（如 `products:write`/`slides:write`/`settings:write`）与首登强制改密标记；`activity_logs` 拟扩展 `action` 取值以覆盖登录/退出/商品增改删，记录操作时间戳与操作人用户名（会话时长由登录+退出推导；来源 IP 首版可选），查看限主账号并支持按时间/用户筛选。后台入口移除隐藏手势、仅保留直接 URL `/admin.html`，子账号管理为新增能力。以上均须通过版本化迁移引入并写入正式 `openapi.yaml`。
 

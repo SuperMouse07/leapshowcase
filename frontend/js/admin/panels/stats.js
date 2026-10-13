@@ -10,18 +10,18 @@ import { http } from '../../core/http.js';
 
 export default {
   id: 'statsPanel',
-  nav: '♖ Server Monitor',
+  nav: '♖ 服务器监控',
   capability: 'stats:view',
   panelClass: 'admin-stats',
 
   mount(host) {
     host.innerHTML = `
-      <div class="stat"><span>Volume Mount Point</span><b id="statMountPoint">…</b></div>
-      <div class="stat"><span>Disk Total (Volume)</span><b id="statDiskTotal">…</b></div>
-      <div class="stat"><span>Disk Free (Volume)</span><b id="statDiskFree">…</b></div>
-      <div class="stat"><span>Disk Used %</span><b id="statDiskPct" class="gold">…</b></div>
-      <div class="stat"><span>Database</span><b id="statDbType">…</b></div>
-      <div class="stat"><span>Products</span><b id="statCount">…</b></div>
+      <div class="stat"><span>卷挂载点</span><b id="statMountPoint">…</b></div>
+      <div class="stat"><span>磁盘总量（卷）</span><b id="statDiskTotal">…</b></div>
+      <div class="stat"><span>磁盘剩余（卷）</span><b id="statDiskFree">…</b></div>
+      <div class="stat"><span>磁盘使用率</span><b id="statDiskPct" class="gold">…</b></div>
+      <div class="stat"><span>数据库</span><b id="statDbType">…</b></div>
+      <div class="stat"><span>商品数量</span><b id="statCount">…</b></div>
       <div class="stat-bars">
         <div class="stat-bar-wrap">
           <div class="stat-bar"><i id="diskBar"></i></div>
@@ -44,7 +44,7 @@ export default {
       $('#statDiskTotal').textContent = s.volumeTotalBytes > 0 ? formatBytes(s.volumeTotalBytes) : '—';
       $('#statDiskFree').textContent = s.volumeFreeBytes > 0 ? formatBytes(s.volumeFreeBytes) : '—';
       $('#statDbType').textContent = s.dbType === 'postgresql' ? 'PostgreSQL' : 'SQLite';
-      $('#statCount').textContent = `${s.productCount} item(s)`;
+      $('#statCount').textContent = `${s.productCount} 件`;
 
       // Disk used % — prefer server-computed value, fall back to local calc
       const used = s.volumeUsedBytes != null
@@ -71,10 +71,10 @@ export default {
 
       $('#diskBarLabel').textContent =
         s.volumeTotalBytes > 0
-          ? `Disk used (Volume) ${formatBytes(used)} of ${formatBytes(s.volumeTotalBytes)} (${diskPct.toFixed(1)}%)`
-          : 'Disk capacity unavailable';
+          ? `卷磁盘已用 ${formatBytes(used)} / ${formatBytes(s.volumeTotalBytes)}（${diskPct.toFixed(1)}%）`
+          : '磁盘容量不可用';
     } catch {
-      $('#diskBarLabel').textContent = 'Storage stats unavailable';
+      $('#diskBarLabel').textContent = '存储统计不可用';
     }
   },
 };

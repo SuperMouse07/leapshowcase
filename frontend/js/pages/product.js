@@ -2,13 +2,12 @@
  * pages/product.js · 商品详情控制器（product.html?id=N）
  * ------------------------------------------------------------
  * 左侧主图 1:1 左右滑动（scroll-snap + 循环箭头）+ 下方详情图；
- * 右侧标题/标签/价格/数量/加入清单 + Product Information（Markdown 卖点）。
+ * 右侧标题/价格/数量/加入清单 + Product Information（Markdown 卖点）。
  * 主图与详情图共用同一 Lightbox 浏览序列，桌面端叠加悬停放大镜。
  */
 import { initShell, openDrawer } from '../ui/shell.js';
 import { observe } from '../ui/reveal.js';
 import { renderMarkdown } from '../ui/markdown.js';
-import { badgesHtml } from '../ui/badges.js';
 import { setupZoomLens, bindImageClicks } from '../ui/lightbox.js';
 import { $, $$, escapeHtml, money, queryParam } from '../core/dom.js';
 import { SITE } from '../core/config.js';
@@ -82,9 +81,7 @@ async function init() {
         <div class="pd-info">
           <span class="micro-label left solo">${escapeHtml(meta.kicker)}</span>
           <h1 class="pd-name">${escapeHtml(p.name)}</h1>
-          ${p.tags?.length ? `<div class="pd-tags">${badgesHtml(p.tags)}</div>` : ''}
-          <p class="pd-price">${money(p.current_price ?? p.price)}${p.original_price ? `<s class="price-was">${money(p.original_price)}</s>` : ''}</p>
-          ${p.moq > 1 ? `<p class="pd-moq">Minimum order: ${p.moq} units</p>` : ''}
+          <p class="pd-price">${money(p.price)}</p>
           <p class="pd-desc">${escapeHtml(p.description || '')}</p>
           <div class="pd-buy">
             <span class="stepper">
