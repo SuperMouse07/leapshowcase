@@ -230,6 +230,8 @@
 
 Dockerfile 设置 `ENV DATA_DIR=/data` 与 `ENV UPLOAD_DIR=/data/uploads`，对齐 Zeabur Volume 在 `/data` 的挂载点。启动时验证卷可写性（写入探测失败则拒绝启动），确保数据库与上传图片持久化，重部署不丢数据。管理后台存储面板展示卷容量详情。
 
+`/data` 目录布局（SQLite 模式为唯一持久层；PostgreSQL 模式下承载文件类资产）：`leapchess.db`（仅 SQLite 模式）、`.jwt-secret`（未配置 JWT_SECRET 时生成，0600 权限）、`uploads/<sha1 前 2 位>/<sha1>.<ext>`（商品/变体/详情/轮播/LOGO 共用，256 桶哈希分片、内容去重）。备份以数据库为核心、uploads 为增量；优先平台卷快照/数据库备份，无平台能力时定期拷出 `/data` 兜底。扩展点：所有图片字段（images、variants[].images、details、slides.image、settings.logo_url）统一经 `saveDataUrl`/`materializeImages` 落盘、数据库仅存 URL 引用，后续多语言素材、多规格图集、动态素材同步只需复用该管道新增字段，无需改动存储层。
+
 ### 8.3 异步错误边界
 
 引入 `wrapAsync(fn)` 包装所有 async 路由，将 rejected promise 转交终端错误中间件；终端中间件统一返回 `{ error }` JSON 与相应状态码，避免请求挂起或进程因未处理 rejection 退出（修复 K2）。
