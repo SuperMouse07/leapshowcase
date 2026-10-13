@@ -16,7 +16,36 @@ const { db, connect, initSchema, usePg, storageStats } = require('./db');
 const { seed } = require('./seed');
 
 const PORT = Number(process.env.PORT || 3000); // Zeabur 会注入 PORT（默认 8080）
-const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? null : 'leapchess-dev-secret-change-me');
+/**
+ * JWT 密钥解析（避免缺少配置导致生产容器崩溃-重启循环）：
+ * 1. 优先使用显式注入的 JWT_SECRET（Zeabur Variables 配置，优先级最高）；
+ * 2. 生产环境缺失时，从持久化目录（DATA_DIR，Zeabur 指向挂载 Volume）读取密钥文件，
+ *    不存在则生成 48 字节随机密钥并以 0600 权限落盘，重启后复用、登录会话不失效；
+ *    目录不可写时退化为进程内随机密钥（仅该次运行有效）；
+ * 3. 开发环境沿用固定的开发默认密钥。
+ * 随机密钥不是固定默认密钥，不存在可被伪造的风险；仍强烈建议显式配置 JWT_SECRET。
+ */
+function resolveJwtSecret() {
+  if (process.env.JWT_SECRET) return process.env.JWT_SECRET;
+  if (process.env.NODE_ENV !== 'production') return 'leapchess-dev-secret-change-me';
+  const dataDir = process.env.DATA_DIR || path.join(__dirname, 'data');
+  const secretFile = path.join(dataDir, '.jwt-secret');
+  try {
+    if (fs.existsSync(secretFile)) {
+      const saved = fs.readFileSync(secretFile, 'utf8').trim();
+      if (saved) return saved;
+    }
+    const generated = crypto.randomBytes(48).toString('base64url');
+    fs.mkdirSync(dataDir, { recursive: true });
+    fs.writeFileSync(secretFile, generated, { mode: 0o600 });
+    console.warn(`[leapchess] 警告: 未检测到 JWT_SECRET，已生成随机密钥并落盘 ${secretFile}（重启后复用）；建议在 Zeabur Variables 显式配置 JWT_SECRET。`);
+    return generated;
+  } catch (err) {
+    console.warn(`[leapchess] 警告: 未检测到 JWT_SECRET 且密钥文件不可用（${err.message}），本次运行使用进程内随机密钥，重启后所有登录会话将失效；请配置 JWT_SECRET。`);
+    return crypto.randomBytes(48).toString('base64url');
+  }
+}
+const JWT_SECRET = resolveJwtSecret();
 const TOKEN_TTL = '12h';
 const MAX_IMAGES = 10; // 每件商品（含变体图集）最多图片数
 // 图片文件目录：生产指向 Zeabur 挂载的 Volume（如 /data/uploads），本地回退 backend/data/uploads
@@ -580,7 +609,7 @@ app.put('/api/products/:id', authRequired, editorOnly, wrapAsync(async (req, res
   if (!imgList.length) {
     return res.status(400).json({ error: 'Please upload at least 1 main image' });
   }
-  const variantList = b.variants !== undefined ? materializeVariiants(toVariants(b.variants)) : p.variants;
+  const variantList = b.variants !== undefined ? materializeVariants(toVariants(b.variants)) : p.variants;
   const hasNewDetails = b.details !== undefined;
   const detailList = materializeImages(hasNewDetails ? toImages(b.details) : p.details);
   const infoList = b.info !== undefined ? toInfo(b.info) : p.info;
@@ -971,10 +1000,6 @@ if (fs.existsSync(frontendDir)) {
 
 /* ---------------- 启动 ---------------- */
 (async () => {
-  if (!JWT_SECRET) {
-    console.error('[fatal] JWT_SECRET environment variable is required in production. Refusing to start.');
-    process.exit(1);
-  }
   process.on('unhandledRejection', (reason) => {
     console.error('[fatal] Unhandled rejection:', reason);
   });

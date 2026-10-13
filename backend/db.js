@@ -1,7 +1,7 @@
 /**
  * 数据库抽象层：
- * - 检测到 DATABASE_URL / PGHOST / POSTGRES_URI / POSTGRES_HOST 环境变量时使用 PostgreSQL（Zeabur 生产环境）
- *   （Zeabur 注入变量有两代命名：旧版 PGHOST 等、新版 POSTGRES_HOST 等，均兼容）
+ * - 检测到 DATABASE_URL / PGHOST / POSTGRES_URI / POSTGRES_HOST / POSTGRES_CONNECTION_STRING 环境变量时使用 PostgreSQL（Zeabur 生产环境）
+ *   （Zeabur 注入变量有两代命名：旧版 PGHOST 等、新版 POSTGRES_HOST 等；POSTGRES_CONNECTION_STRING 为官方文档推荐的引用变量名，均兼容）
  * - 否则回退到本地 SQLite 文件（sql.js 纯 WASM 实现，无需编译，开发零配置）
  * SQL 统一使用 ? 占位符，PostgreSQL 路径会自动转换为 $1/$2...
  *
@@ -11,7 +11,8 @@ const path = require('path');
 const fs = require('fs');
 
 const usePg = Boolean(
-  process.env.DATABASE_URL || process.env.PGHOST || process.env.POSTGRES_URI || process.env.POSTGRES_HOST
+  process.env.DATABASE_URL || process.env.PGHOST || process.env.POSTGRES_URI || process.env.POSTGRES_HOST ||
+  process.env.POSTGRES_CONNECTION_STRING
 );
 
 let impl = null;
@@ -31,7 +32,7 @@ function toPgSql(sql) {
  *   DATABASE_URL 中携带 sslmode=require 来开启
  */
 function pgPoolOptions() {
-  const url = process.env.DATABASE_URL || process.env.POSTGRES_URI;
+  const url = process.env.DATABASE_URL || process.env.POSTGRES_URI || process.env.POSTGRES_CONNECTION_STRING;
   if (url) {
     const needsSsl =
       /sslmode=(require|verify-ca|verify-full)/i.test(url) ||
