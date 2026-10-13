@@ -74,6 +74,18 @@ export async function fetchProductStorage(id) {
   return http.get(buildPath('productStorage', { id }));
 }
 
+/**
+ * 批量商品存储明细（admin）：单次请求替代 N 路并发（后端上限 100 个 ID）。
+ * @param {Array<number|string>} ids 商品 ID 列表
+ * @returns {Promise<Object>} { [id]: { imageCount, imageBytes, dbBytes, totalBytes } }；id 不存在时该键缺席
+ */
+export async function fetchBulkStorage(ids) {
+  const list = (ids || []).map((id) => String(id)).filter(Boolean);
+  if (!list.length) return {};
+  const data = await http.get('/products/storage', { params: { ids: list.join(',') } });
+  return data.storage || {};
+}
+
 /** 新建商品（editor） */
 export async function createProduct(body) {
   const data = await http.post('/products', body);

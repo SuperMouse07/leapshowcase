@@ -36,6 +36,7 @@ export const ENDPOINTS = {
   listProducts: { method: 'GET', path: '/products', status: 'stable' },
   getProduct: { method: 'GET', path: '/products/:id', status: 'stable' },
   productStorage: { method: 'GET', path: '/products/:id/storage', status: 'stable' },
+  productsStorageBulk: { method: 'GET', path: '/products/storage', status: 'stable' },
   createProduct: { method: 'POST', path: '/products', status: 'stable' },
   updateProduct: { method: 'PUT', path: '/products/:id', status: 'stable' },
   deleteProduct: { method: 'DELETE', path: '/products/:id', status: 'stable' },

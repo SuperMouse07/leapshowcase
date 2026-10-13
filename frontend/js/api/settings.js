@@ -49,11 +49,14 @@ export async function updateSetting(key, value) {
   return http.put('/settings', { key, value });
 }
 
-/** 批量更新：逐项 PUT（后端契约为单项更新） */
+/**
+ * 批量更新：单次 PUT { settings: {...} }，后端在单事务内原子写入并记一条合并审计。
+ * @param {Object|Array} pairs 键值对象 { site_title: '...' }，或兼容旧调用的 [[key, value], ...] 数组
+ * @returns {Promise<{ok: boolean, updated: string[]}>}
+ */
 export async function updateSettings(pairs) {
-  for (const [key, value] of pairs) {
-    await updateSetting(key, value);
-  }
+  const settings = Array.isArray(pairs) ? Object.fromEntries(pairs) : { ...pairs };
+  return http.put('/settings', { settings });
 }
 
 /** 保存主推款 ID 数组（editor） */

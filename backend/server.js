@@ -488,6 +488,32 @@ app.get('/api/products', wrapAsync(async (req, res) => {
   }
 }));
 
+// 批量商品存储明细（管理员）：?ids=1,2,3（≤100 个），单次查询替代前端 N 路并发请求。
+// 注意：必须注册在 /api/products/:id 之前，避免 "storage" 被 :id 捕获。
+app.get('/api/products/storage', authRequired, adminOnly, wrapAsync(async (req, res) => {
+  const raw = String(req.query.ids || '');
+  const ids = [...new Set(raw.split(',').map((s) => s.trim()).filter((s) => /^\d+$/.test(s)))].slice(0, 100);
+  const storage = {};
+  if (ids.length) {
+    const placeholders = ids.map(() => '?').join(', ');
+    const rows = await db.query(
+      `SELECT * FROM products WHERE id IN (${placeholders})`,
+      ids.map(Number)
+    );
+    for (const row of rows) {
+      const p = parseProduct(row);
+      const d = productStorageDetail(p);
+      storage[p.id] = {
+        imageCount: d.imageFileCount,
+        imageBytes: d.imageFileBytes,
+        dbBytes: d.jsonBytes,
+        totalBytes: d.totalBytes,
+      };
+    }
+  }
+  res.json({ storage });
+}));
+
 // 详情（公开）
 app.get('/api/products/:id', wrapAsync(async (req, res) => {
   const rows = await db.query('SELECT * FROM products WHERE id = ?', [req.params.id]);
@@ -707,14 +733,15 @@ app.delete('/api/slides/:id', authRequired, editorOnly, wrapAsync(async (req, re
 const SETTINGS_KEYS = ['site_title', 'logo_url', 'announcement_html', 'contact_email', 'contact_social', 'hero_products'];
 
 /** settings 表 upsert（双方言兼容：PG 不能用 db.run，其会自动追加 RETURNING id） */
-async function upsertSetting(key, value) {
-  if (db.type === 'postgresql') {
-    await db.query(
+async function upsertSetting(key, value, dbi) {
+  const d = dbi || db;
+  if (d.type === 'postgresql') {
+    await d.query(
       'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value',
       [key, value]
     );
   } else {
-    await db.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', [key, value]);
+    await d.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', [key, value]);
   }
 }
 
@@ -732,50 +759,87 @@ app.get('/api/settings', wrapAsync(async (req, res) => {
   res.json({ settings });
 }));
 
-// 编辑者：更新单项设置
-app.put('/api/settings', authRequired, editorOnly, wrapAsync(async (req, res) => {
-  const { key, value } = req.body || {};
-  if (!SETTINGS_KEYS.includes(key)) {
-    return res.status(400).json({ error: 'Unknown setting key' });
-  }
-  if (typeof value !== 'string') {
-    return res.status(400).json({ error: 'Value must be a string' });
-  }
-  if (Buffer.byteLength(value, 'utf8') > 64 * 1024) {
-    return res.status(400).json({ error: 'Setting value too large' });
-  }
+/** 校验单个设置值；返回错误文案（string）或 null（通过）。hero_products 需查库验 ID，故为 async */
+async function validateSettingValue(key, value) {
+  if (!SETTINGS_KEYS.includes(key)) return 'Unknown setting key';
+  if (typeof value !== 'string') return 'Value must be a string';
+  if (Buffer.byteLength(value, 'utf8') > 64 * 1024) return 'Setting value too large';
   if (key === 'hero_products') {
     // hero_products 必须是 JSON 数组，元素为真实存在的商品 ID（字符串形式）
     let arr;
     try { arr = JSON.parse(value); } catch {
-      return res.status(400).json({ error: 'hero_products must be a valid JSON array' });
+      return 'hero_products must be a valid JSON array';
     }
-    if (!Array.isArray(arr)) {
-      return res.status(400).json({ error: 'hero_products must be a JSON array' });
-    }
-    if (arr.length > 4) {
-      return res.status(400).json({ error: 'hero_products can contain at most 4 items' });
-    }
+    if (!Array.isArray(arr)) return 'hero_products must be a JSON array';
+    if (arr.length > 4) return 'hero_products can contain at most 4 items';
     for (const pid of arr) {
-      if (!/^\d+$/.test(String(pid))) {
-        return res.status(400).json({ error: `Invalid product id: ${pid}` });
-      }
+      if (!/^\d+$/.test(String(pid))) return `Invalid product id: ${pid}`;
       const rows = await db.query('SELECT id FROM products WHERE id = ?', [Number(pid)]);
-      if (!rows[0]) {
-        return res.status(400).json({ error: `Product not found: ${pid}` });
-      }
+      if (!rows[0]) return `Product not found: ${pid}`;
     }
   }
-  // 审计：对比旧值
-  const oldRows = await db.query('SELECT value FROM settings WHERE key = ?', [key]);
-  const oldValue = oldRows[0] ? oldRows[0].value : '';
-  await upsertSetting(key, value);
-  if (oldValue !== value) {
+  return null;
+}
+
+// 编辑者：更新设置。两种请求体（向后兼容）：
+//   单项 { key, value } → { ok, key }
+//   批量 { settings: { k1: v1, ... } } → 先整体校验，再单事务写入，仅记一条合并审计 → { ok, updated: [...] }
+app.put('/api/settings', authRequired, editorOnly, wrapAsync(async (req, res) => {
+  const body = req.body || {};
+  const batch = body.settings && typeof body.settings === 'object' && !Array.isArray(body.settings);
+  const pairs = batch
+    ? Object.entries(body.settings)
+    : [[body.key, body.value]];
+  if (batch && !pairs.length) {
+    return res.status(400).json({ error: 'settings object is empty' });
+  }
+
+  // 校验先行：批量模式下任一键非法则整体拒绝，未通过校验前不产生任何写入
+  for (const [key, value] of pairs) {
+    const err = await validateSettingValue(key, value);
+    if (err) return res.status(400).json({ error: err });
+  }
+
+  // 审计：一次性取出全部旧值做 diff
+  const keys = pairs.map(([k]) => k);
+  const placeholders = keys.map(() => '?').join(', ');
+  const oldRows = await db.query(
+    `SELECT key, value FROM settings WHERE key IN (${placeholders})`,
+    keys
+  );
+  const oldMap = {};
+  for (const r of oldRows) oldMap[r.key] = r.value;
+
+  // 全部 upsert 在单事务内执行（PG：BEGIN/COMMIT 专用连接；SQLite/sql.js：同步串行，天然原子）
+  await db.withTransaction(async (tx) => {
+    for (const [key, value] of pairs) {
+      await upsertSetting(key, value, tx);
+    }
+  });
+
+  // 变更项合并为一条审计记录（无实际变更则不记，与单项模式口径一致）
+  const changed = [];
+  const diffParts = [];
+  for (const [key, value] of pairs) {
+    const oldValue = oldMap[key] !== undefined ? oldMap[key] : '';
+    if (oldValue === value) continue;
+    changed.push(key);
     const displayOld = key === 'logo_url' ? (oldValue || '(empty)') : oldValue.slice(0, 60);
     const displayNew = key === 'logo_url' ? (value || '(empty)') : value.slice(0, 60);
-    await logActivity(req.user.id, 'setting_update', `Setting "${key}" changed: "${displayOld}" → "${displayNew}"`, 'setting', key);
+    diffParts.push(`"${key}": "${displayOld}" → "${displayNew}"`);
   }
-  res.json({ ok: true, key });
+  if (diffParts.length) {
+    const detail = batch
+      ? `Settings batch update (${changed.length} changed): ${diffParts.join(' | ')}`
+      : `Setting "${changed[0]}" changed: ${diffParts[0].replace(`"${changed[0]}": `, '')}`;
+    await logActivity(req.user.id, 'setting_update', detail, 'setting', batch ? changed.join(',') : changed[0]);
+  }
+
+  if (batch) {
+    res.json({ ok: true, updated: keys });
+  } else {
+    res.json({ ok: true, key: keys[0] });
+  }
 }));
 
 // 编辑者：LOGO 上传（dataURL → 落盘 /uploads/ → 写入 settings.logo_url）

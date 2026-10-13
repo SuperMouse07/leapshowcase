@@ -62,11 +62,15 @@ async function connect() {
   if (usePg) {
     const { Pool } = require('pg');
     const pool = new Pool(pgPoolOptions());
+    /** ? → $n 占位符转换 + pg 客户端执行（tx 参数存在时走事务专用连接） */
+    const pgQuery = async (client, sql, params = []) => {
+      const { rows } = await client.query(toPgSql(sql), params);
+      return rows;
+    };
     impl = {
       type: 'postgresql',
       async query(sql, params = []) {
-        const { rows } = await pool.query(toPgSql(sql), params);
-        return rows;
+        return pgQuery(pool, sql, params);
       },
       async run(sql, params = []) {
         // INSERT 自动附加 RETURNING id，便于拿到新记录主键
@@ -76,6 +80,35 @@ async function connect() {
             : sql;
         const rows = await this.query(withReturning, params);
         return rows[0] && rows[0].id !== undefined ? { id: rows[0].id } : {};
+      },
+      /** 事务：借用专用连接执行 BEGIN/COMMIT，回调内的 query/run 全部走同一连接；异常自动 ROLLBACK */
+      async withTransaction(fn) {
+        const client = await pool.connect();
+        const tx = {
+          type: 'postgresql',
+          async query(sql, params = []) {
+            return pgQuery(client, sql, params);
+          },
+          async run(sql, params = []) {
+            const withReturning =
+              /^\s*insert/i.test(sql) && !/returning/i.test(sql)
+                ? sql.replace(/;?\s*$/, ' RETURNING id')
+                : sql;
+            const rows = await this.query(withReturning, params);
+            return rows[0] && rows[0].id !== undefined ? { id: rows[0].id } : {};
+          },
+        };
+        try {
+          await client.query('BEGIN');
+          const result = await fn(tx);
+          await client.query('COMMIT');
+          return result;
+        } catch (err) {
+          try { await client.query('ROLLBACK'); } catch { /* 连接已断开时忽略回滚失败 */ }
+          throw err;
+        } finally {
+          client.release();
+        }
       },
     };
     return impl;
@@ -120,6 +153,10 @@ async function connect() {
       const [{ last_id }] = await this.query('SELECT last_insert_rowid() AS last_id');
       persist();
       return { id: last_id };
+    },
+    /** sql.js 单连接同步执行，进程内天然串行：直接顺序执行即具备原子性（失败时后续写入不会发生） */
+    async withTransaction(fn) {
+      return fn(impl);
     },
   };
   return impl;
@@ -304,6 +341,10 @@ const db = {
   run(...args) {
     if (!impl) throw new Error('数据库尚未连接，请先 await connect()');
     return impl.run(...args);
+  },
+  withTransaction(fn) {
+    if (!impl) throw new Error('数据库尚未连接，请先 await connect()');
+    return impl.withTransaction(fn);
   },
 };
 

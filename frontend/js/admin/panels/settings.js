@@ -1,7 +1,7 @@
 /**
  * admin/panels/settings.js · 全站设置面板（能力：settings:write）
  * ------------------------------------------------------------
- * 站点标题 / LOGO 上传 / 首页公告 / 联系方式，逐项 PUT 保存（契约见 api/settings.js）。
+ * 站点标题 / LOGO 上传 / 首页公告 / 联系方式，单次批量 PUT 原子保存（契约见 api/settings.js）。
  * 保存后经 BroadcastChannel 通知前台标签页即时同步（core/events.broadcastSettings）。
  */
 import { $ } from '../../core/dom.js';
@@ -83,14 +83,15 @@ export default {
       e.preventDefault();
       const btn = $('#settingsSaveBtn', host);
       btn.disabled = true;
-      const pairs = [
-        ['site_title', $('#setSiteTitle', host).value.trim()],
-        ['announcement_html', $('#setAnnouncement', host).value],
-        ['contact_email', $('#setContactEmail', host).value.trim()],
-        ['contact_social', $('#setContactSocial', host).value.trim()],
-      ];
+      // 单次批量提交：后端原子写入，要么全部生效、要么整体失败（不再有“部分成功”假象）
+      const settings = {
+        site_title: $('#setSiteTitle', host).value.trim(),
+        announcement_html: $('#setAnnouncement', host).value,
+        contact_email: $('#setContactEmail', host).value.trim(),
+        contact_social: $('#setContactSocial', host).value.trim(),
+      };
       try {
-        await updateSettings(pairs);
+        await updateSettings(settings);
         toastOk('Settings saved — live on the frontend.');
         broadcastSettings();
       } catch (err) {

@@ -16,7 +16,7 @@ import {
   createProduct,
   updateProduct,
   deleteProduct,
-  fetchProductStorage,
+  fetchBulkStorage,
 } from '../../api/products.js';
 import { fetchSettings, saveHeroProducts } from '../../api/settings.js';
 import { reportActivity } from '../../api/activity.js';
@@ -544,19 +544,19 @@ export default {
   },
 
   async loadRowStorage(products) {
-    await Promise.all(
-      products.map(async (p) => {
-        let d = null;
-        try {
-          d = await fetchProductStorage(p.id);
-        } catch {
-          return;
-        }
-        const cell = $(`#rowSize-${p.id}`);
-        if (!d || !cell) return;
-        cell.textContent = formatBytes(d.totalBytes);
-        cell.dataset.tip = `Images: ${d.imageFileCount} files | ${formatBytes(d.imageFileBytes)} on disk | JSON: ${formatBytes(d.jsonBytes)} | Total: ${formatBytes(d.totalBytes)}`;
-      })
-    );
+    // 单次批量请求取回本页全部商品的存储明细（替代旧版 N 路并发的 /products/:id/storage）
+    let storage = null;
+    try {
+      storage = await fetchBulkStorage(products.map((p) => p.id));
+    } catch {
+      return; // 明细为辅助信息：失败时保留占位符，不打扰主流程
+    }
+    for (const p of products) {
+      const d = storage && storage[p.id];
+      const cell = $(`#rowSize-${p.id}`);
+      if (!d || !cell) continue;
+      cell.textContent = formatBytes(d.totalBytes);
+      cell.dataset.tip = `Images: ${d.imageCount} files | ${formatBytes(d.imageBytes)} on disk | JSON: ${formatBytes(d.dbBytes)} | Total: ${formatBytes(d.totalBytes)}`;
+    }
   },
 };
