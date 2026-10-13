@@ -1,8 +1,8 @@
-# 任务清单（tasks）· 生产基线对齐版 v0.3
+# 任务清单（tasks）· 生产基线对齐版 v0.4
 
-> **状态说明**：本清单依据 `../LeapShop@0476933` 源码核验结果编制。当前只更新规格，不修改旧生产代码。  
+> **状态说明**：本清单依据本仓库（`SuperMouse07/leapshowcase`，main）源码核验结果编制；v0.4 进入 Phase 2 实施（见 §I）。  
 > **优先级**：P0 阻塞开工/发布｜P1 首版必须｜P2 后续优化｜P3 条件触发。  
-> **状态**：✅ 完成｜⏳ 待决策｜⬜ 待实施｜🚫 当前不做。
+> **状态**：✅ 完成｜⏳ 待决策｜⬜ 待实施｜🔄 进行中｜🚫 当前不做。
 
 ---
 
@@ -38,15 +38,15 @@
 
 ## C. 旧生产基线 P0 修复
 
-> 以下任务已由源码证明存在，但尚未获得本轮“修改运行代码”的授权，因此均为待实施。
+> 以下任务已由源码证明存在。Phase 2 已获授权修改运行代码，正在 Module 3 中实施，故标记为进行中。
 
 | ID | 优先级 | 任务 | 验收标准 | 状态 |
 |---|---:|---|---|---:|
-| C1 | P0 | 修复 `removeUnreferenced` 路径边界 | 非规范 `/uploads` URL 被拒绝；解析路径必须位于 `UPLOAD_DIR`；含越界回归测试 | ⬜ |
-| C2 | P0 | 增加 Express async 统一错误处理 | 所有 async 路由异常返回统一 `{ error }` 500；进程不因未处理 rejection 退出 | ⬜ |
-| C3 | P0 | 修复 `materializeVariiants` 拼写 | 带 variants 的 PUT 成功；失败场景有接口测试 | ⬜ |
-| C4 | P0 | 移除生产默认密钥 | production 环境缺少 `JWT_SECRET` 时启动失败；开发默认仅限明确开发模式 | ⬜ |
-| C5 | P0 | 移除公开默认凭据并设计初始化方式 | 登录页不显示密码；预置主账号 P001/123456 仅作首启引导，首登强制改密并初始化基础环境；文档不包含真实凭据 | ⬜ |
+| C1 | P0 | 修复 `removeUnreferenced` 路径边界 | 非规范 `/uploads` URL 被拒绝；解析路径必须位于 `UPLOAD_DIR`；含越界回归测试 | 🔄 进行中 |
+| C2 | P0 | 增加 Express async 统一错误处理 | 所有 async 路由异常返回统一 `{ error }` 500；进程不因未处理 rejection 退出 | 🔄 进行中 |
+| C3 | P0 | 修复 `materializeVariiants` 拼写 | 带 variants 的 PUT 成功；失败场景有接口测试 | 🔄 进行中 |
+| C4 | P0 | 移除生产默认密钥 | production 环境缺少 `JWT_SECRET` 时启动失败；开发默认仅限明确开发模式 | 🔄 进行中 |
+| C5 | P0 | 移除公开默认凭据并设计初始化方式 | 登录页不显示密码；预置主账号 P001/123456 仅作首启引导，首登强制改密并初始化基础环境；文档不包含真实凭据 | 🔄 进行中 |
 
 ---
 
@@ -109,3 +109,60 @@
 `B1～B5、B7 产品决策` → `C1～C5 P0 修复` → `D1～D3 测试/校验` → `D4～D8 首版基线` → `E1～E9 新站业务` → `F 系列优化`。
 
 任何任务不得以“最终架构文档写过”为完成依据；完成状态必须由当前源码、自动化测试或部署验证证明。
+
+---
+
+## I. Phase 2 实施任务（v0.4）
+
+> Phase 2 进入本仓库的实际实施，按模块增量交付：每个模块独立提交、推送至 main 并在线上验证后再进入下一模块。对应 [proposal.md](./proposal.md) §4.5、[design.md](./design.md) §8 与 [ADR-0007](./record/ADR-0007-phase2-storage-and-ui-modernization.md)。
+
+### I1. 规格对齐与遗留清理（Module 1）
+
+| ID | 任务 | 状态 |
+|---|---|---|
+| I1.1 | 种子资产从 frontend/sandbox/prototype-f/assets/ 迁移至 backend/seed-assets/ | ⬜ |
+| I1.2 | 删除 frontend/sandbox/ 全部内容 | ⬜ |
+| I1.3 | 删除 tools/dev-server.mjs 与过时文档 | ⬜ |
+| I1.4 | 更新 .gitignore 和 .dockerignore | ⬜ |
+| I1.5 | 更新 specs/ 至 v0.4 并新增 ADR-0007 | ⬜ |
+
+### I2. 持久化存储配置（Module 2）
+
+| ID | 任务 | 状态 |
+|---|---|---|
+| I2.1 | Dockerfile 添加 ENV DATA_DIR=/data, UPLOAD_DIR=/data/uploads | ⬜ |
+| I2.2 | 增强 /api/stats/storage 返回卷容量详情 | ⬜ |
+| I2.3 | 管理后台 stats 面板展示卷信息 + 60秒自动刷新 | ⬜ |
+| I2.4 | 启动时验证 Volume 可写性 | ⬜ |
+
+### I3. P0 安全修复（Module 3）
+
+| ID | 任务 | 状态 |
+|---|---|---|
+| I3.1 | 添加 wrapAsync + Express 错误中间件 | ⬜ |
+| I3.2 | removeUnreferenced 路径遍历防护 | ⬜ |
+| I3.3 | 修复 materializeVariants 拼写错误 | ⬜ |
+| I3.4 | JWT_SECRET 生产环境强制检查 | ⬜ |
+| I3.5 | logo_url 纳入引用清理扫描 | ⬜ |
+
+### I4. 管理后台 UI 优化（Module 4）
+
+| ID | 任务 | 状态 |
+|---|---|---|
+| I4.1 | theme.css 添加间距/字号/表面令牌 | ⬜ |
+| I4.2 | admin.css 替换硬编码色值为令牌 | ⬜ |
+| I4.3 | 修复审计日志缺失的 update/view 样式 | ⬜ |
+| I4.4 | IntersectionObserver 侧边栏激活状态 | ⬜ |
+| I4.5 | dialog.js 替代原生 confirm/prompt | ⬜ |
+| I4.6 | 面板加载骨架屏 | ⬜ |
+| I4.7 | 排版与间距一致性调整 | ⬜ |
+
+### I5. 后端逻辑增强（Module 5）
+
+| ID | 任务 | 状态 |
+|---|---|---|
+| I5.1 | 商品列表数据库级分页 | ⬜ |
+| I5.2 | 批量存储统计接口 | ⬜ |
+| I5.3 | 批量设置更新接口 | ⬜ |
+| I5.4 | 前端适配新接口 | ⬜ |
+

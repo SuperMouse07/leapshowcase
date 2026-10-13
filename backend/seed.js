@@ -3,7 +3,7 @@
  * - 超级管理员 P001 / 123456
  * - 商品 16 件（分类 chess-clock / chess-board / stopwatch / lifestyle，仅当商品表为空时写入）
  * - 轮播图 3 帧（仅当 slides 表为空时写入）
- * 图片源：frontend/sandbox/prototype-f/assets/（设计存档目录），按 sha1 内容哈希导入 UPLOAD_DIR，幂等。
+ * 图片源：backend/seed-assets/（种子资产目录），按 sha1 内容哈希导入 UPLOAD_DIR，幂等。
  */
 const path = require('path');
 const fs = require('fs');
@@ -12,7 +12,7 @@ const bcrypt = require('bcryptjs');
 const { db, connect, initSchema, usePg } = require('./db');
 
 const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, 'data', 'uploads');
-const SEED_ASSETS_DIR = path.join(__dirname, '..', 'frontend', 'sandbox', 'prototype-f', 'assets');
+const SEED_ASSETS_DIR = path.join(__dirname, 'seed-assets');
 
 /**
  * 多角色测试账户（内部测试阶段）

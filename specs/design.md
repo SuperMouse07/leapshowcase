@@ -1,8 +1,8 @@
 # 架构设计（design）· 生产基线对齐与演进边界
 
-> **文档状态**：v0.3（业务范围收敛：标准产品为主，商品标签区分促销/定制等）  
-> **核验日期**：2026-10-12  
-> **事实基线**：旧项目 `../LeapShop` 的 `feat/test-login-system@0476933`。`LEAPSHOP_FINAL_ARCHITECTURE.md` 是该基线的说明文档，但事实冲突时以源码为准。  
+> **文档状态**：v0.4（进入 Phase 2 实施：新增 §8 架构变更）  
+> **核验日期**：2026-10-13  
+> **事实基线**：生产基线现为本仓库（`SuperMouse07/leapshowcase`，main 分支），已部署至 leapshowcase.com；旧 `../LeapShop@0476933` 已合并至此。事实冲突时以本仓库当前源码为准。  
 > **本文性质**：现状审计 + 差距分析 + 改进决策入口；继续遵守 [proposal.md](./proposal.md) 的 C1～C4。
 
 ---
@@ -215,3 +215,43 @@
 4. 后台访问入口、主账号/子账号权限矩阵与审计增强已由用户确认（ADR-0005），作为 C1 例外纳入范围：移除隐藏手势仅直接 URL、登录仅用户名+密码、P001 首登初始化并强制改密。
 5. TypeScript、ORM、前端框架不是当前首要矛盾；它们不能阻塞 P0 修复，也不能替代契约与测试。
 6. 实施顺序与验收标准见 [tasks.md](./tasks.md)，需求边界与待确认项见 [proposal.md](./proposal.md)。
+
+---
+
+## 8. Phase 2 架构变更
+
+本节记录 Phase 2（v0.4）在本仓库实际落地的架构调整，对应 [proposal.md](./proposal.md) §4.5、[tasks.md](./tasks.md) I1～I5 与 [ADR-0007](./record/ADR-0007-phase2-storage-and-ui-modernization.md)。
+
+### 8.1 种子资产迁移
+
+`backend/seed-assets/` 成为种子图片的唯一规范位置；`seed.js` 从该目录读取（原路径 `frontend/sandbox/prototype-f/assets/` 已随沙箱删除）。Docker 镜像须包含 `backend/seed-assets/` 以保证容器内可正确 seed。
+
+### 8.2 持久化存储
+
+Dockerfile 设置 `ENV DATA_DIR=/data` 与 `ENV UPLOAD_DIR=/data/uploads`，对齐 Zeabur Volume 在 `/data` 的挂载点。启动时验证卷可写性（写入探测失败则拒绝启动），确保数据库与上传图片持久化，重部署不丢数据。管理后台存储面板展示卷容量详情。
+
+### 8.3 异步错误边界
+
+引入 `wrapAsync(fn)` 包装所有 async 路由，将 rejected promise 转交终端错误中间件；终端中间件统一返回 `{ error }` JSON 与相应状态码，避免请求挂起或进程因未处理 rejection 退出（修复 K2）。
+
+### 8.4 路径安全
+
+`removeUnreferenced` 在删除前校验 URL 格式，仅接受正则 `/^\/uploads\/[0-9a-f]{2}\/[0-9a-f]{40}\.[a-z]+$/` 匹配的规范路径，并确认 `path.resolve` 后的绝对路径位于 `UPLOAD_DIR` 内，杜绝目录越界删除（修复 K1）。
+
+### 8.5 JWT 密钥
+
+生产环境（`NODE_ENV=production`）缺少显式 `JWT_SECRET` 时拒绝启动，不再回退到源码内置默认值；开发默认密钥仅在明确的开发模式下生效（修复 K3）。
+
+### 8.6 管理后台设计令牌
+
+`theme.css` 扩展间距比例（spacing scale）、字号比例（type scale）与表面令牌（surface tokens）；`admin.css` 改为消费这些令牌，替换硬编码的色值、间距与字号，实现视觉一致性与可维护性。
+
+### 8.7 数据库级分页
+
+商品列表接口在存在 `limit` 参数时改用 SQL `LIMIT/OFFSET` + `COUNT(*)`，不再全量读取后在内存 `slice`；响应结构保持向后兼容（修复 K7）。
+
+### 8.8 批量接口
+
+- `GET /api/stats/products-storage`：一次性返回各商品的存储统计明细，替代逐个查询；
+- `PUT /api/settings/batch`：多键设置一次性更新，减少往返并保证批量写入的原子性。
+

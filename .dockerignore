@@ -7,12 +7,3 @@ backend/data
 backend/test-api.ps1
 backend/test-crud.js
 *.log
-
-# 前端设计沙箱：仅保留 prototype-f（seed.js 需其 assets 作种子图），排除其余大体积设计存档以精简镜像
-frontend/sandbox/prototype-a
-frontend/sandbox/prototype-b
-frontend/sandbox/prototype-c
-frontend/sandbox/prototype-d
-frontend/sandbox/prototype-e
-frontend/sandbox/type-f-data
-frontend/sandbox/.design-ref

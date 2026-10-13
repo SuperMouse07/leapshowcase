@@ -13,17 +13,6 @@ npm-debug.log*
 .env
 .env.*
 
-# --- design sandbox archives (large; not needed at runtime) ---
-# NOTE: keep frontend/sandbox/prototype-f/assets — backend/seed.js imports the
-# homepage carousel + product images from there on first boot.
-frontend/sandbox/prototype-a/
-frontend/sandbox/prototype-b/
-frontend/sandbox/prototype-c/
-frontend/sandbox/prototype-d/
-frontend/sandbox/prototype-e/
-frontend/sandbox/type-f-data/
-frontend/sandbox/.design-ref/
-
 # --- OS / editor ---
 .DS_Store
 Thumbs.db
