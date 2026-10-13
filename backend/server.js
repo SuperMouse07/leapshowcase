@@ -850,6 +850,11 @@ if (fs.existsSync(frontendDir)) {
     '/products': 'products.html',
     '/product': 'product.html',
     '/series': 'series.html',
+    // 四个专属分类页（干净 URL）；/series 保留以兼容旧 ?cat= 链接
+    '/chess-clock': 'chess-clock.html',
+    '/chess-board': 'chess-board.html',
+    '/stopwatch': 'stopwatch.html',
+    '/lifestyle': 'lifestyle.html',
     '/journey': 'journey.html',
     '/login': 'login.html',
     '/admin': 'admin.html',

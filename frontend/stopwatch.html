@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LEAP · Stopwatch</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♞</text></svg>" />
+  <link rel="stylesheet" href="css/theme.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/storefront.css" />
+</head>
+<!-- 专属分类页：/stopwatch（干净 URL，由后端 PAGE_ROUTES 映射）；
+     data-cat 硬编码，series.js 据此渲染页头文案与导航高亮。 -->
+<body data-page="series" data-cat="stopwatch">
+  <main>
+    <header class="cat-hero">
+      <span class="micro-label" id="catKicker"></span>
+      <h1 class="sec-title" id="catTitle"></h1>
+      <p class="sec-sub" id="catTagline" style="margin:0 auto;"></p>
+    </header>
+    <div class="checker-band" aria-hidden="true"></div>
+    <section class="section">
+      <div class="wrap">
+        <div class="ov-head">
+          <h3>Pieces in this series</h3>
+          <span class="ov-count" id="catCount"></span>
+        </div>
+        <div class="masonry" id="grid"></div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="js/pages/series.js"></script>
+</body>
+</html>

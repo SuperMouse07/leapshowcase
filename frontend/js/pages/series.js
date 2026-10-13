@@ -1,18 +1,20 @@
 /**
- * pages/series.js · 系列页控制器（series.html?cat=<id>）
+ * pages/series.js · 分类系列页控制器
  * ------------------------------------------------------------
- * 单一参数化路由取代旧版四个分类 HTML（ADR-0005 精简结构）。
- * 读取 ?cat= 设定页头文案与导航高亮，展示该分类商品瀑布流。
+ * 驱动四个专属分类页（/chess-clock、/chess-board、/stopwatch、/lifestyle），
+ * 并兼容旧的参数化 series.html?cat=<id> 链接。
+ * 依 body[data-cat] 设定页头文案与导航高亮，展示该分类商品瀑布流。
  */
 import { initShell } from '../ui/shell.js';
 import { observe } from '../ui/reveal.js';
 import { masonryItem, emptyState } from '../ui/cards.js';
-import { $, escapeHtml, queryParam } from '../core/dom.js';
-import { catMeta, seriesHref, CATS, withRatios } from '../data/content.js';
+import { $, queryParam } from '../core/dom.js';
+import { catMeta, CATS, withRatios } from '../data/content.js';
 import { fetchProducts } from '../api/products.js';
 
-// 导航高亮依赖 body[data-cat]，须在 initShell 注入前设定
-const cat = queryParam('cat') || CATS[0].id;
+// 分类优先取 body[data-cat]（专属分类页硬编码，须在 initShell 注入前确定以驱动导航高亮）；
+// 旧 /series?cat=<id> 链接回退查询参数，保持向后兼容。
+const cat = document.body.dataset.cat || queryParam('cat') || CATS[0].id;
 document.body.dataset.cat = cat;
 
 initShell();
@@ -27,15 +29,6 @@ function renderHead() {
   if (titleEl) titleEl.textContent = meta.title;
   if (taglineEl) taglineEl.textContent = meta.tagline;
   document.title = `${meta.title} · LEAP`;
-
-  // 分类切换条（当前分类高亮）
-  const nav = $('#catNav');
-  if (nav) {
-    nav.innerHTML = CATS.map(
-      (c) =>
-        `<a class="chip${c.id === cat ? ' is-active' : ''}" href="${seriesHref(c.id)}">${escapeHtml(c.label)}</a>`
-    ).join('');
-  }
 }
 
 async function init() {

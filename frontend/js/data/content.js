@@ -43,8 +43,8 @@ export const CAT_META = {
   },
 };
 
-/** 系列页链接（统一参数化路由） */
-export const seriesHref = (catId) => `/series?cat=${encodeURIComponent(catId)}`;
+/** 系列页链接（每个分类对应专属干净 URL，如 /chess-clock；由后端 PAGE_ROUTES 映射到对应 HTML） */
+export const seriesHref = (catId) => `/${catId}`;
 
 /** 取系列元数据（未知分类回退） */
 export function catMeta(catId) {
