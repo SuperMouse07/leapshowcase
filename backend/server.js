@@ -16,7 +16,7 @@ const { db, connect, initSchema, usePg, storageStats } = require('./db');
 const { seed } = require('./seed');
 
 const PORT = Number(process.env.PORT || 3000); // Zeabur 会注入 PORT（默认 8080）
-const JWT_SECRET = process.env.JWT_SECRET || 'leapchess-dev-secret-change-me';
+const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? null : 'leapchess-dev-secret-change-me');
 const TOKEN_TTL = '12h';
 const MAX_IMAGES = 10; // 每件商品（含变体图集）最多图片数
 // 图片文件目录：生产指向 Zeabur 挂载的 Volume（如 /data/uploads），本地回退 backend/data/uploads
@@ -120,6 +120,9 @@ function saveDataUrl(dataUrl) {
   }
 }
 
+/** Wrap async route handler to forward rejections to Express error middleware */
+const wrapAsync = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+
 /** 图片列表物化：data URL 落盘转 URL，已有 URL 原样保留；落盘失败的 data URL 丢弃（避免把长串 base64 写进数据库） */
 function materializeImages(list) {
   return list
@@ -151,13 +154,26 @@ function productUploadUrls(p) {
   return urls;
 }
 
+/** 合法上传 URL 白名单：/uploads/<2位hex>/<40位sha1 hex>.<扩展名>，阻止路径穿越删除 */
+const VALID_UPLOAD_URL = /^\/uploads\/[0-9a-f]{2}\/[0-9a-f]{40}\.[a-z]{2,10}$/;
+
 /** best-effort 清理不再被任何商品/轮播图引用的磁盘文件（内容哈希去重下安全） */
 async function removeUnreferenced(urls) {
   try {
     const rows = await db.query('SELECT images, variants, details FROM products');
     const slides = await db.query('SELECT image FROM slides');
+    // LOGO 也是被引用的落盘图片，必须纳入保护，永不误删
+    const logoRow = await db.query("SELECT value FROM settings WHERE key = 'logo_url'");
+    const logoUrl = logoRow[0] ? String(logoRow[0].value || '') : '';
+    const root = path.resolve(UPLOAD_DIR);
     for (const url of new Set(urls)) {
+      // 路径穿越防护 1：仅允许符合内容哈希命名规范的 /uploads URL 进入删除流程
+      if (!VALID_UPLOAD_URL.test(url)) {
+        console.warn('[leapchess] 跳过非法上传 URL（格式不符，拒绝删除）:', url);
+        continue;
+      }
       const referenced =
+        (logoUrl && logoUrl === url) ||
         rows.some(
           (r) =>
             String(r.images || '').includes(url) ||
@@ -165,7 +181,13 @@ async function removeUnreferenced(urls) {
             String(r.details || '').includes(url)
         ) || slides.some((s) => String(s.image || '') === url);
       if (referenced) continue;
-      const abs = path.join(UPLOAD_DIR, url.slice('/uploads/'.length));
+      const rel = url.slice('/uploads/'.length);
+      const abs = path.resolve(UPLOAD_DIR, rel);
+      // 路径穿越防护 2：解析后的绝对路径必须仍位于 UPLOAD_DIR 之内
+      if (abs !== root && !abs.startsWith(root + path.sep)) {
+        console.warn('[leapchess] 跳过越界上传路径（拒绝删除 UPLOAD_DIR 之外文件）:', url);
+        continue;
+      }
       if (fs.existsSync(abs)) fs.unlinkSync(abs);
     }
   } catch (err) {
@@ -269,7 +291,7 @@ function bearerEditor(req) {
 }
 
 /* ---------------- 认证接口 ---------------- */
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', wrapAsync(async (req, res) => {
   const { username, password } = req.body || {};
   if (!username || !password) {
     return res.status(400).json({ error: 'Please enter username and password' });
@@ -290,14 +312,14 @@ app.post('/api/auth/login', async (req, res) => {
     token,
     user: { id: user.id, username: user.username, role: user.role, display_name: user.display_name || user.username },
   });
-});
+}));
 
 app.get('/api/auth/me', authRequired, (req, res) => {
   res.json({ user: req.user });
 });
 
 /* ---------------- 测试账户注册（内部测试阶段，管理员可创建账户） ---------------- */
-app.post('/api/auth/register', authRequired, adminOnly, async (req, res) => {
+app.post('/api/auth/register', authRequired, adminOnly, wrapAsync(async (req, res) => {
   const { username, password, role, display_name } = req.body || {};
   if (!username || !password) {
     return res.status(400).json({ error: 'Username and password are required' });
@@ -318,10 +340,10 @@ app.post('/api/auth/register', authRequired, adminOnly, async (req, res) => {
     [username.trim(), hash, targetRole, (display_name || username).trim()]
   );
   res.status(201).json({ user: { id, username: username.trim(), role: targetRole, display_name: (display_name || username).trim() } });
-});
+}));
 
 /** 当前用户修改自己的密码 */
-app.put('/api/auth/password', authRequired, async (req, res) => {
+app.put('/api/auth/password', authRequired, wrapAsync(async (req, res) => {
   const { old_password, new_password } = req.body || {};
   if (!old_password || !new_password) {
     return res.status(400).json({ error: 'Old and new password are required' });
@@ -337,15 +359,15 @@ app.put('/api/auth/password', authRequired, async (req, res) => {
   const hash = bcrypt.hashSync(new_password, 10);
   await db.run('UPDATE users SET password_hash = ? WHERE id = ?', [hash, req.user.id]);
   res.json({ ok: true });
-});
+}));
 
 /* ---------------- 用户管理（管理员） ---------------- */
-app.get('/api/users', authRequired, adminOnly, async (req, res) => {
+app.get('/api/users', authRequired, adminOnly, wrapAsync(async (req, res) => {
   const rows = await db.query('SELECT id, username, role, display_name, created_at FROM users ORDER BY id ASC');
   res.json({ users: rows });
-});
+}));
 
-app.delete('/api/users/:id', authRequired, adminOnly, async (req, res) => {
+app.delete('/api/users/:id', authRequired, adminOnly, wrapAsync(async (req, res) => {
   const rows = await db.query('SELECT * FROM users WHERE id = ?', [req.params.id]);
   if (!rows[0]) return res.status(404).json({ error: 'User not found' });
   if (rows[0].role === 'admin') {
@@ -353,10 +375,10 @@ app.delete('/api/users/:id', authRequired, adminOnly, async (req, res) => {
   }
   await db.run('DELETE FROM users WHERE id = ?', [req.params.id]);
   res.json({ ok: true });
-});
+}));
 
 /** 管理员重置测试账户密码 */
-app.put('/api/users/:id/password', authRequired, adminOnly, async (req, res) => {
+app.put('/api/users/:id/password', authRequired, adminOnly, wrapAsync(async (req, res) => {
   const { new_password } = req.body || {};
   if (!new_password || new_password.length < 4) {
     return res.status(400).json({ error: 'Password must be at least 4 characters' });
@@ -366,7 +388,7 @@ app.put('/api/users/:id/password', authRequired, adminOnly, async (req, res) => 
   const hash = bcrypt.hashSync(new_password, 10);
   await db.run('UPDATE users SET password_hash = ? WHERE id = ?', [hash, req.params.id]);
   res.json({ ok: true });
-});
+}));
 
 /* ---------------- 活动日志（操作审计追溯） ---------------- */
 /**
@@ -405,15 +427,15 @@ function diffChanges(oldObj, newObj, fields) {
 }
 
 /** 记录前台交互事件（测试员操作追溯） */
-app.post('/api/activity', authRequired, async (req, res) => {
+app.post('/api/activity', authRequired, wrapAsync(async (req, res) => {
   const { action, detail } = req.body || {};
   if (!action) return res.status(400).json({ error: 'Action is required' });
   await logActivity(req.user.id, action, detail || '');
   res.json({ ok: true });
-});
+}));
 
 /** 管理员查看活动日志（支持分页 + 按用户筛选） */
-app.get('/api/activity', authRequired, adminOnly, async (req, res) => {
+app.get('/api/activity', authRequired, adminOnly, wrapAsync(async (req, res) => {
   const limit = Math.min(Number(req.query.limit) || 100, 500);
   const userId = req.query.user_id;
   let rows;
@@ -429,7 +451,7 @@ app.get('/api/activity', authRequired, adminOnly, async (req, res) => {
     );
   }
   res.json({ logs: rows });
-});
+}));
 
 /* ---------------- 商品接口 ---------------- */
 // 列表（公开，可按分类过滤；排序：人工权重升序 → 上传时间倒序）
@@ -443,7 +465,7 @@ async function getHeroIds() {
   } catch { return []; }
 }
 
-app.get('/api/products', async (req, res) => {
+app.get('/api/products', wrapAsync(async (req, res) => {
   const { category, page, limit } = req.query;
   let rows;
   if (category) {
@@ -464,25 +486,25 @@ app.get('/api/products', async (req, res) => {
   } else {
     res.json({ products });
   }
-});
+}));
 
 // 详情（公开）
-app.get('/api/products/:id', async (req, res) => {
+app.get('/api/products/:id', wrapAsync(async (req, res) => {
   const rows = await db.query('SELECT * FROM products WHERE id = ?', [req.params.id]);
   if (!rows[0]) return res.status(404).json({ error: 'Product not found' });
   res.json({ product: parseProduct(rows[0]) });
-});
+}));
 
 // 单商品存储明细（管理员）：图片文件数/磁盘字节 + JSON 记录字节
-app.get('/api/products/:id/storage', authRequired, adminOnly, async (req, res) => {
+app.get('/api/products/:id/storage', authRequired, adminOnly, wrapAsync(async (req, res) => {
   const rows = await db.query('SELECT * FROM products WHERE id = ?', [req.params.id]);
   if (!rows[0]) return res.status(404).json({ error: 'Product not found' });
   const p = parseProduct(rows[0]);
   res.json({ id: p.id, name: p.name, ...productStorageDetail(p) });
-});
+}));
 
 // 新增（编辑者：admin/tester）
-app.post('/api/products', authRequired, editorOnly, async (req, res) => {
+app.post('/api/products', authRequired, editorOnly, wrapAsync(async (req, res) => {
   const { name, category, price, description, image, images, variants, details, info, stock, sort_weight, sku } = req.body || {};
   if (!name || !String(name).trim()) {
     return res.status(400).json({ error: 'Product name is required' });
@@ -518,10 +540,10 @@ app.post('/api/products', authRequired, editorOnly, async (req, res) => {
     'product', id
   );
   res.status(201).json({ product: created });
-});
+}));
 
 // 更新（编辑者：admin/tester）
-app.put('/api/products/:id', authRequired, editorOnly, async (req, res) => {
+app.put('/api/products/:id', authRequired, editorOnly, wrapAsync(async (req, res) => {
   const exist = await db.query('SELECT * FROM products WHERE id = ?', [req.params.id]);
   if (!exist[0]) return res.status(404).json({ error: 'Product not found' });
   const p = parseProduct(exist[0]);
@@ -572,10 +594,10 @@ app.put('/api/products/:id', authRequired, editorOnly, async (req, res) => {
     );
   }
   res.json({ product: updated });
-});
+}));
 
 // 删除（编辑者：admin/tester）；若删的是主推款，自动清空主推设置
-app.delete('/api/products/:id', authRequired, editorOnly, async (req, res) => {
+app.delete('/api/products/:id', authRequired, editorOnly, wrapAsync(async (req, res) => {
   const exist = await db.query('SELECT * FROM products WHERE id = ?', [req.params.id]);
   if (!exist[0]) return res.status(404).json({ error: 'Product not found' });
   const deleted = parseProduct(exist[0]);
@@ -596,20 +618,20 @@ app.delete('/api/products/:id', authRequired, editorOnly, async (req, res) => {
     'product', req.params.id
   );
   res.json({ ok: true });
-});
+}));
 
 /* ---------------- 首页轮播图（slides）接口 ---------------- */
 // 列表（公开，按 sort 升序仅返回启用项；管理员携 token 加 ?all=1 返回全部）
-app.get('/api/slides', async (req, res) => {
+app.get('/api/slides', wrapAsync(async (req, res) => {
   const all = req.query.all === '1' && bearerEditor(req);
   const rows = all
     ? await db.query('SELECT * FROM slides ORDER BY sort ASC, id ASC')
     : await db.query('SELECT * FROM slides WHERE enabled = 1 ORDER BY sort ASC, id ASC');
   res.json({ slides: rows });
-});
+}));
 
 // 新增（编辑者）：image 支持 data URL 自动落盘；sort 缺省追加到末尾
-app.post('/api/slides', authRequired, editorOnly, async (req, res) => {
+app.post('/api/slides', authRequired, editorOnly, wrapAsync(async (req, res) => {
   const { image, alt, sort, enabled } = req.body || {};
   if (!image || typeof image !== 'string') {
     return res.status(400).json({ error: 'Slide image is required' });
@@ -636,10 +658,10 @@ app.post('/api/slides', authRequired, editorOnly, async (req, res) => {
     'slide', id
   );
   res.status(201).json({ slide: rows[0] });
-});
+}));
 
 // 更新（编辑者）：alt / sort / enabled / image
-app.put('/api/slides/:id', authRequired, editorOnly, async (req, res) => {
+app.put('/api/slides/:id', authRequired, editorOnly, wrapAsync(async (req, res) => {
   const exist = await db.query('SELECT * FROM slides WHERE id = ?', [req.params.id]);
   if (!exist[0]) return res.status(404).json({ error: 'Slide not found' });
   const s = exist[0];
@@ -669,17 +691,17 @@ app.put('/api/slides/:id', authRequired, editorOnly, async (req, res) => {
     await logActivity(req.user.id, 'slide_update', `Updated slide (id:${req.params.id}): ${detail}`, 'slide', req.params.id);
   }
   res.json({ slide: rows[0] });
-});
+}));
 
 // 删除（编辑者）+ 无引用磁盘清理
-app.delete('/api/slides/:id', authRequired, editorOnly, async (req, res) => {
+app.delete('/api/slides/:id', authRequired, editorOnly, wrapAsync(async (req, res) => {
   const exist = await db.query('SELECT * FROM slides WHERE id = ?', [req.params.id]);
   if (!exist[0]) return res.status(404).json({ error: 'Slide not found' });
   await db.run('DELETE FROM slides WHERE id = ?', [req.params.id]);
   await removeUnreferenced([exist[0].image]);
   await logActivity(req.user.id, 'slide_delete', `Deleted slide (id:${req.params.id}, alt:"${exist[0].alt}")`, 'slide', req.params.id);
   res.json({ ok: true });
-});
+}));
 
 /* ---------------- 全站设置（settings 表） ---------------- */
 const SETTINGS_KEYS = ['site_title', 'logo_url', 'announcement_html', 'contact_email', 'contact_social', 'hero_products'];
@@ -697,7 +719,7 @@ async function upsertSetting(key, value) {
 }
 
 // 公开：返回全部设置（前台渲染 title/LOGO/公告/联系方式）
-app.get('/api/settings', async (req, res) => {
+app.get('/api/settings', wrapAsync(async (req, res) => {
   const rows = await db.query('SELECT key, value FROM settings');
   const settings = {};
   for (const r of rows) settings[r.key] = r.value;
@@ -708,10 +730,10 @@ app.get('/api/settings', async (req, res) => {
     settings.hero_products = [];
   }
   res.json({ settings });
-});
+}));
 
 // 编辑者：更新单项设置
-app.put('/api/settings', authRequired, editorOnly, async (req, res) => {
+app.put('/api/settings', authRequired, editorOnly, wrapAsync(async (req, res) => {
   const { key, value } = req.body || {};
   if (!SETTINGS_KEYS.includes(key)) {
     return res.status(400).json({ error: 'Unknown setting key' });
@@ -754,10 +776,10 @@ app.put('/api/settings', authRequired, editorOnly, async (req, res) => {
     await logActivity(req.user.id, 'setting_update', `Setting "${key}" changed: "${displayOld}" → "${displayNew}"`, 'setting', key);
   }
   res.json({ ok: true, key });
-});
+}));
 
 // 编辑者：LOGO 上传（dataURL → 落盘 /uploads/ → 写入 settings.logo_url）
-app.post('/api/settings/logo', authRequired, editorOnly, async (req, res) => {
+app.post('/api/settings/logo', authRequired, editorOnly, wrapAsync(async (req, res) => {
   const oldRows = await db.query("SELECT value FROM settings WHERE key = 'logo_url'");
   const url = saveDataUrl(req.body && req.body.image);
   if (!url) return res.status(400).json({ error: 'Unsupported or invalid image data' });
@@ -766,10 +788,10 @@ app.post('/api/settings/logo', authRequired, editorOnly, async (req, res) => {
   if (oldRows[0]) await removeUnreferenced([oldRows[0].value]);
   await logActivity(req.user.id, 'setting_update', `LOGO updated: ${(oldRows[0]?.value || '(none)')} → ${url}`, 'setting', 'logo_url');
   res.json({ url });
-});
+}));
 
 /* ---------------- 存储统计（管理员） ---------------- */
-app.get('/api/stats/storage', authRequired, adminOnly, async (req, res) => {
+app.get('/api/stats/storage', authRequired, adminOnly, wrapAsync(async (req, res) => {
   const { totalBytes: dbBytes, productBytes: dbProductBytes } = await storageStats();
   const uploads = dirStats(UPLOAD_DIR); // 图片文件落盘占用（生产为 Volume 挂载点，含轮播图/LOGO）
   const [{ c }] = await db.query('SELECT COUNT(*) AS c FROM products');
@@ -801,11 +823,18 @@ app.get('/api/stats/storage', authRequired, adminOnly, async (req, res) => {
     volumeUsedBytes: Math.max(0, (volume.totalBytes || 0) - (volume.freeBytes || 0)),
     volumeUsedPercent: volume.totalBytes ? Math.round((1 - volume.freeBytes / volume.totalBytes) * 1000) / 10 : 0,
   });
-});
+}));
 
 /* ---------------- 健康检查 ---------------- */
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', db: db.type, time: new Date().toISOString() });
+});
+
+// ── Unified error boundary ──
+app.use((err, req, res, next) => {
+  const status = err.status || err.statusCode || 500;
+  if (status === 500) console.error('[error]', req.method, req.path, err.message);
+  res.status(status).json({ error: status === 500 ? 'Internal server error' : err.message });
 });
 
 /* ---------------- 上传图片静态服务（内容哈希命名，可长缓存） ---------------- */
@@ -873,6 +902,13 @@ if (fs.existsSync(frontendDir)) {
 
 /* ---------------- 启动 ---------------- */
 (async () => {
+  if (!JWT_SECRET) {
+    console.error('[fatal] JWT_SECRET environment variable is required in production. Refusing to start.');
+    process.exit(1);
+  }
+  process.on('unhandledRejection', (reason) => {
+    console.error('[fatal] Unhandled rejection:', reason);
+  });
   await connect();
   if (!usePg) {
     if (process.env.DATA_DIR) {
